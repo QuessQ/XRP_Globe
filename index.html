@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>XRP Pulse — Global Ledger Flows</title>
+<meta name="description" content="Interactive dark-themed globe visualizing live XRP payments flowing between cities, plus an estimate of where the supply is held." />
+<link rel="stylesheet" href="css/style.css" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='42' fill='%230d0d12' stroke='%233987e5' stroke-width='8'/></svg>" />
+</head>
+<body>
+
+<div id="globe"></div>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-dot"></span>
+    <h1>XRP&nbsp;Pulse</h1>
+    <span class="subtitle">global ledger flows</span>
+  </div>
+  <div class="top-controls">
+    <span id="mode-badge" class="badge badge-connecting" title="Data source status">
+      <span class="badge-dot"></span><span id="mode-text">CONNECTING…</span>
+    </span>
+    <button id="toggle-rotate" class="ctl-btn" aria-pressed="true" title="Toggle auto-rotation">⟳ Rotate</button>
+    <button id="toggle-left" class="ctl-btn panel-toggle" aria-pressed="true" title="Toggle live activity panel">Activity</button>
+    <button id="toggle-right" class="ctl-btn panel-toggle" aria-pressed="true" title="Toggle holdings panel">Holdings</button>
+  </div>
+</header>
+
+<!-- Left: live activity -->
+<aside id="panel-left" class="panel panel-left" aria-label="Live network activity">
+  <h2>Live activity <span class="muted">(this session)</span></h2>
+  <div class="tiles">
+    <div class="tile">
+      <span class="tile-label">Payments</span>
+      <span class="tile-value" id="stat-count">0</span>
+    </div>
+    <div class="tile">
+      <span class="tile-label">XRP moved</span>
+      <span class="tile-value" id="stat-volume">0</span>
+    </div>
+    <div class="tile">
+      <span class="tile-label">Payments / min</span>
+      <span class="tile-value" id="stat-rate">–</span>
+    </div>
+    <div class="tile">
+      <span class="tile-label">Largest payment</span>
+      <span class="tile-value" id="stat-largest">–</span>
+    </div>
+  </div>
+
+  <h3>Top corridors <span class="muted">(session)</span></h3>
+  <ol id="corridors" class="corridor-list"><li class="muted empty">Waiting for payments…</li></ol>
+
+  <h3>Payment feed</h3>
+  <ul id="feed" class="feed"><li class="muted empty">Waiting for payments…</li></ul>
+</aside>
+
+<!-- Right: holdings estimate -->
+<aside id="panel-right" class="panel panel-right" aria-label="Estimated XRP holdings">
+  <h2>Where XRP is held <span class="muted">(estimate)</span></h2>
+  <p class="panel-note">Share of the ~99.99B XRP total supply, by identifiable entity. Values are
+  best-effort estimates — see methodology.</p>
+  <div id="holdings-chart" class="hbar-chart" role="img" aria-label="Bar chart of estimated XRP holdings by entity"></div>
+
+  <h3>By region</h3>
+  <div id="region-chart" class="hbar-chart hbar-chart-compact" role="img" aria-label="Bar chart of estimated XRP holdings by region"></div>
+  <p id="region-headline" class="headline"></p>
+
+  <details class="methodology">
+    <summary>Methodology &amp; caveats</summary>
+    <p>XRP transactions carry no geographic data. Locations shown here map <em>known
+    exchange and institutional wallets</em> to the entity's home city; payments touching
+    unidentified wallets are placed at a plausible city weighted by regional exchange
+    activity and are marked <em>estimated</em>.</p>
+    <p>Holdings figures combine Ripple's published escrow balance with public rich-list
+    and exchange-reserve snapshots. Exchange balances move daily; treat these as
+    order-of-magnitude estimates, not audited figures. "Self-custody &amp; unidentified"
+    is the remainder of total supply and has no reliable geography.</p>
+    <p>Edit <code>js/data.js</code> to update wallets, cities, or holdings figures.</p>
+  </details>
+
+  <details class="methodology" id="table-view-wrap">
+    <summary>Table view</summary>
+    <table class="data-table" id="holdings-table"></table>
+  </details>
+</aside>
+
+<!-- City detail card -->
+<div id="city-card" class="city-card hidden" role="dialog" aria-label="City details">
+  <button id="city-card-close" class="card-close" aria-label="Close">×</button>
+  <h3 id="cc-name"></h3>
+  <p id="cc-entities" class="cc-entities"></p>
+  <div class="cc-grid">
+    <div><span class="tile-label">Est. holdings</span><span id="cc-holdings" class="cc-val"></span></div>
+    <div><span class="tile-label">Supply share</span><span id="cc-share" class="cc-val"></span></div>
+    <div><span class="tile-label">Inflow (session)</span><span id="cc-in" class="cc-val"></span></div>
+    <div><span class="tile-label">Outflow (session)</span><span id="cc-out" class="cc-val"></span></div>
+  </div>
+</div>
+
+<!-- Legend -->
+<footer class="legend">
+  <span class="legend-item"><span class="swatch arc-normal"></span> payment</span>
+  <span class="legend-item"><span class="swatch arc-whale"></span> whale payment (≥ 1M XRP)</span>
+  <span class="legend-item"><span class="swatch dot"></span> city — size = est. holdings</span>
+  <span class="legend-sep">·</span>
+  <span class="legend-item muted">drag to rotate · scroll to zoom · click a city for details</span>
+</footer>
+
+<script src="vendor/globe.gl.min.js"></script>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
