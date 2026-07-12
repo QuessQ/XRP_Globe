@@ -6,6 +6,7 @@
 
 import {
   CITIES, CITY_HOLDINGS, CITY_ENTITIES, HOLDINGS, UNIDENTIFIED, TOTAL_SUPPLY_B,
+  TIERS, classifyAmount,
 } from './data.js';
 import { PaymentFeed } from './feed.js';
 
@@ -13,9 +14,6 @@ const WHALE_XRP = 1_000_000;
 const FLIGHT_MS = 2400;
 const MAX_ARCS = 60;
 const MIN_ARC_INTERVAL_MS = 200; // visual throttle; stats still count everything
-
-const COLOR_ARC = ['rgba(57,135,229,0.12)', 'rgba(140,200,255,0.9)'];
-const COLOR_ARC_WHALE = ['rgba(213,81,129,0.18)', 'rgba(244,140,180,0.95)'];
 
 const $ = (id) => document.getElementById(id);
 
@@ -78,7 +76,7 @@ const world = Globe()($('globe'))
   .labelAltitude(0.012)
   .labelResolution(2)
   .arcsData([])
-  .arcColor(d => d.whale ? COLOR_ARC_WHALE : COLOR_ARC)
+  .arcColor(d => [d.tier.color.replace(/[\d.]+\)$/, '0.12)'), d.tier.head])
   .arcStroke(d => d.stroke)
   .arcAltitudeAutoScale(0.42)
   .arcDashLength(0.45)
@@ -129,10 +127,12 @@ for (const [btnId, panelId] of [['toggle-left', 'panel-left'], ['toggle-right', 
 let arcs = [];
 let rings = [];
 let lastArcAt = 0;
+let minArcAmount = 0; // arc-size filter; stats always count everything
 
 function spawnArc(p) {
   const now = performance.now();
   const whale = p.amountXRP >= WHALE_XRP;
+  if (p.amountXRP < minArcAmount) return;
   if (!whale && now - lastArcAt < MIN_ARC_INTERVAL_MS) return; // keep it readable
   lastArcAt = now;
 
@@ -143,7 +143,7 @@ function spawnArc(p) {
     const arc = {
       startLat: p.from.city.lat, startLng: p.from.city.lng,
       endLat: p.to.city.lat, endLng: p.to.city.lng,
-      whale, stroke,
+      whale, stroke, tier: classifyAmount(p.amountXRP),
     };
     arcs.push(arc);
     if (arcs.length > MAX_ARCS) arcs.splice(0, arcs.length - MAX_ARCS);
@@ -170,11 +170,32 @@ function spawnArc(p) {
 
 const stats = { count: 0, volume: 0, largest: 0, started: Date.now() };
 const corridors = new Map();
+const tierStats = new Map(TIERS.map(t => [t.id, { count: 0, volume: 0 }]));
+const exFlow = { in: 0, out: 0, txIn: 0, txOut: 0 }; // vs identified exchange wallets
+const whaleLog = [];
 
 function onPayment(p) {
   stats.count++;
   stats.volume += p.amountXRP;
   if (p.amountXRP > stats.largest) stats.largest = p.amountXRP;
+
+  const tier = classifyAmount(p.amountXRP);
+  const ts = tierStats.get(tier.id);
+  ts.count++; ts.volume += p.amountXRP;
+
+  // Exchange deposit/withdrawal detection (identified wallets only).
+  // Deposits (→ exchange) read as potential sell-side pressure; withdrawals
+  // (← exchange) read as accumulation into custody.
+  const toEx = p.to.type === 'exchange';
+  const fromEx = p.from.type === 'exchange';
+  if (toEx && !fromEx) { exFlow.in += p.amountXRP; exFlow.txIn++; }
+  if (fromEx && !toEx) { exFlow.out += p.amountXRP; exFlow.txOut++; }
+
+  if (tier.id === 'whale') {
+    whaleLog.unshift({ ...p, at: new Date() });
+    if (whaleLog.length > 25) whaleLog.pop();
+    renderWhaleLog();
+  }
 
   const out = cityStats(p.from.city.id);
   out.out += p.amountXRP; out.txOut++;
@@ -188,6 +209,19 @@ function onPayment(p) {
 
   spawnArc(p);
   pushFeed(p);
+}
+
+const sideLabel = (side) => side.entity || side.city.name + (side.known ? '' : '*');
+
+function renderWhaleLog() {
+  const el = $('whale-log');
+  el.innerHTML = whaleLog.slice(0, 6).map(w =>
+    `<li><span class="amt whale">${fmtXRP(w.amountXRP)} XRP</span>` +
+    `<span class="tag">${w.live ? 'ledger' : 'sim'}</span><br>` +
+    `<span class="route">${sideLabel(w.from)} → ${sideLabel(w.to)}</span> ` +
+    `<span class="meta">${w.at.toLocaleTimeString()}</span>` +
+    (w.hash ? ` <span class="meta"><a href="https://livenet.xrpl.org/transactions/${w.hash}" target="_blank" rel="noopener">tx ↗</a></span>` : '') +
+    `</li>`).join('');
 }
 
 let feedCount = 0;
@@ -205,6 +239,7 @@ function pushFeed(p) {
   const li = document.createElement('li');
   li.innerHTML =
     `<span class="amt${whale ? ' whale' : ''}">${fmtXRP(p.amountXRP)} XRP</span>` +
+    `<span class="tag">${classifyAmount(p.amountXRP).label}</span>` +
     (whale ? ' 🐋' : '') + '<br>' +
     `<span class="route">${label(p.from)} → ${label(p.to)}</span><br>` +
     `<span class="meta">${new Date().toLocaleTimeString()} · ${p.live ? 'ledger' : 'simulated'}` +
@@ -228,7 +263,62 @@ setInterval(() => {
       .map(([route, n]) => `<li><span class="route">${route}</span><span class="n">${n}</span></li>`)
       .join('');
   }
+
+  // Size-cohort mix: share of session volume per tier, with payment counts.
+  if (stats.volume > 0) {
+    const maxVol = Math.max(...TIERS.map(t => tierStats.get(t.id).volume), 1);
+    $('tier-chart').innerHTML = TIERS.map(t => {
+      const s = tierStats.get(t.id);
+      const share = (s.volume / stats.volume * 100).toFixed(1);
+      return `<div class="hbar">
+        <div class="hbar-head">
+          <span class="hbar-name">${t.label} <span class="loc">· ${s.count} tx</span></span>
+          <span class="hbar-val">${fmtXRP(s.volume)} · ${share}%</span>
+        </div>
+        <div class="hbar-track"><div class="hbar-fill" style="width:${(s.volume / maxVol * 100).toFixed(1)}%;background:${t.head}"></div></div>
+      </div>`;
+    }).join('');
+  }
+
+  // Exchange deposit/withdrawal balance.
+  $('ex-in').textContent = exFlow.txIn ? `${fmtXRP(exFlow.in)}` : '0';
+  $('ex-out').textContent = exFlow.txOut ? `${fmtXRP(exFlow.out)}` : '0';
+  const net = exFlow.in - exFlow.out;
+  $('ex-net').innerHTML = (exFlow.txIn || exFlow.txOut)
+    ? `<span class="${net >= 0 ? 'dir-out' : 'dir-in'}">${net >= 0 ? '+' : '−'}${fmtXRP(Math.abs(net))}</span>`
+    : '–';
+  $('ex-read').textContent = (exFlow.txIn || exFlow.txOut)
+    ? (net > 0
+        ? 'Net flow into exchanges — coins moving toward liquid markets (potential sell-side pressure).'
+        : net < 0
+          ? 'Net flow out of exchanges — coins moving to custody (accumulation signal).'
+          : 'Exchange deposits and withdrawals are balanced.')
+    : 'No payments touching identified exchange wallets yet this session.';
+
+  // Net flow leaders: cities gaining / losing the most XRP this session.
+  const flows = [...sessions.entries()]
+    .map(([id, s]) => ({ id, net: s.in - s.out }))
+    .filter(f => Math.abs(f.net) > 0)
+    .sort((a, b) => Math.abs(b.net) - Math.abs(a.net))
+    .slice(0, 6);
+  if (flows.length) {
+    $('netflow').innerHTML = flows.map(f => {
+      const c = cityPoints.find(x => x.id === f.id);
+      const gain = f.net >= 0;
+      return `<li><span class="route">${c.name}</span>` +
+        `<span class="n" style="color:${gain ? 'var(--good)' : 'var(--whale)'}">${gain ? '+' : '−'}${fmtXRP(Math.abs(f.net))}</span></li>`;
+    }).join('');
+  }
 }, 800);
+
+// Arc size filter buttons.
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    minArcAmount = Number(btn.dataset.min);
+    document.querySelectorAll('.filter-btn').forEach(b =>
+      b.setAttribute('aria-pressed', String(b === btn)));
+  });
+});
 
 // ---------------------------------------------------------------- feed mode
 
@@ -278,6 +368,20 @@ function bar(name, loc, billions, max, other = false) {
 }
 
 function renderHoldings() {
+  // Holder-type rollup: institutional (Ripple treasury/escrow), exchange
+  // reserves (custodial, effectively retail+institutional client funds),
+  // and the unlocatable self-custody remainder.
+  const instB = HOLDINGS.filter(h => h.entity.startsWith('Ripple')).reduce((s, h) => s + h.billions, 0);
+  const exB = HOLDINGS.filter(h => !h.entity.startsWith('Ripple')).reduce((s, h) => s + h.billions, 0);
+  const types = [
+    ['Institutional — Ripple treasury & escrow', instB],
+    ['Exchange reserves (custodial client funds)', exB],
+  ];
+  const tmax = Math.max(instB, exB, UNIDENTIFIED.billions);
+  $('type-chart').innerHTML =
+    types.map(([name, b]) => bar(name, '', b, tmax)).join('') +
+    bar('Self-custody & unidentified', '', UNIDENTIFIED.billions, tmax, true);
+
   const rows = [...HOLDINGS].sort((a, b) => b.billions - a.billions);
   const max = Math.max(rows[0].billions, UNIDENTIFIED.billions);
   $('holdings-chart').innerHTML =

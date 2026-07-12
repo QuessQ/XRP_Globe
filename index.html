@@ -50,6 +50,32 @@
     </div>
   </div>
 
+  <h3>Flow mix by size cohort</h3>
+  <div id="tier-chart" class="hbar-chart hbar-chart-compact"></div>
+
+  <h3>Exchange flows <span class="muted">(identified wallets)</span></h3>
+  <div class="tiles tiles-3">
+    <div class="tile">
+      <span class="tile-label">→ Exchanges</span>
+      <span class="tile-value tile-value-sm" id="ex-in">0</span>
+    </div>
+    <div class="tile">
+      <span class="tile-label">← Exchanges</span>
+      <span class="tile-value tile-value-sm" id="ex-out">0</span>
+    </div>
+    <div class="tile">
+      <span class="tile-label">Net</span>
+      <span class="tile-value tile-value-sm" id="ex-net">–</span>
+    </div>
+  </div>
+  <p id="ex-read" class="headline headline-tight"></p>
+
+  <h3>Whale watch <span class="muted">(≥ 1M XRP)</span></h3>
+  <ul id="whale-log" class="feed feed-compact"><li class="muted empty">No whale movements yet…</li></ul>
+
+  <h3>Net flow leaders <span class="muted">(city, session)</span></h3>
+  <ol id="netflow" class="corridor-list"><li class="muted empty">Waiting for payments…</li></ol>
+
   <h3>Top corridors <span class="muted">(session)</span></h3>
   <ol id="corridors" class="corridor-list"><li class="muted empty">Waiting for payments…</li></ol>
 
@@ -62,6 +88,15 @@
   <h2>Where XRP is held <span class="muted">(estimate)</span></h2>
   <p class="panel-note">Share of the ~99.99B XRP total supply, by identifiable entity. Values are
   best-effort estimates — see methodology.</p>
+
+  <h3>By holder type</h3>
+  <div id="type-chart" class="hbar-chart hbar-chart-compact" role="img" aria-label="Bar chart of estimated XRP holdings by holder type"></div>
+  <p class="headline headline-tight"><strong>Governments:</strong> no state XRP treasury is
+  verifiably identified on-ledger. The U.S. Digital Asset Stockpile (2025) may include
+  seized XRP, but amounts are undisclosed — treat government holdings as inside the
+  "unidentified" remainder.</p>
+
+  <h3>By entity</h3>
   <div id="holdings-chart" class="hbar-chart" role="img" aria-label="Bar chart of estimated XRP holdings by entity"></div>
 
   <h3>By region</h3>
@@ -100,10 +135,21 @@
   </div>
 </div>
 
+<!-- Arc size filter -->
+<div class="arc-filter" role="group" aria-label="Filter arcs by payment size">
+  <span class="arc-filter-label">Show flows:</span>
+  <button class="ctl-btn filter-btn" data-min="0" aria-pressed="true">All</button>
+  <button class="ctl-btn filter-btn" data-min="10000" aria-pressed="false">≥ 10K</button>
+  <button class="ctl-btn filter-btn" data-min="100000" aria-pressed="false">≥ 100K</button>
+  <button class="ctl-btn filter-btn" data-min="1000000" aria-pressed="false">Whales only</button>
+</div>
+
 <!-- Legend -->
 <footer class="legend">
-  <span class="legend-item"><span class="swatch arc-normal"></span> payment</span>
-  <span class="legend-item"><span class="swatch arc-whale"></span> whale payment (≥ 1M XRP)</span>
+  <span class="legend-item"><span class="swatch arc-retail"></span> retail &lt; 10K</span>
+  <span class="legend-item"><span class="swatch arc-mid"></span> mid &lt; 100K</span>
+  <span class="legend-item"><span class="swatch arc-large"></span> large &lt; 1M</span>
+  <span class="legend-item"><span class="swatch arc-whale"></span> whale ≥ 1M XRP</span>
   <span class="legend-item"><span class="swatch dot"></span> city — size = est. holdings</span>
   <span class="legend-sep">·</span>
   <span class="legend-item muted">drag to rotate · scroll to zoom · click a city for details</span>

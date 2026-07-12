@@ -119,6 +119,10 @@ html, body {
 
 /* stat tiles */
 .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.tiles-3 { grid-template-columns: 1fr 1fr 1fr; }
+.tile-value-sm { font-size: 15px; }
+.tile-value .dir-in  { color: var(--good); }
+.tile-value .dir-out { color: var(--whale); }
 .tile {
   background: rgba(255,255,255,0.04);
   border: 1px solid var(--gridline);
@@ -152,6 +156,27 @@ html, body {
 .feed a { color: var(--text-muted); text-decoration: none; border-bottom: 1px dotted var(--text-muted); }
 .feed a:hover { color: var(--text-secondary); }
 .empty { padding: 8px 0; font-size: 12px; }
+.feed-compact li { padding: 5px 0; }
+.feed .tag {
+  display: inline-block;
+  font-size: 9px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 1px 6px; border-radius: 999px; margin-left: 6px;
+  background: rgba(255,255,255,0.08); color: var(--text-secondary);
+  vertical-align: 1px;
+}
+.headline-tight { margin-top: 6px; font-size: 11px; color: var(--text-muted); }
+
+/* arc size filter */
+.arc-filter {
+  position: fixed;
+  bottom: 36px; left: 50%;
+  transform: translateX(-50%);
+  display: flex; align-items: center; gap: 6px;
+  z-index: 16;
+}
+.arc-filter-label { font-size: 11px; color: var(--text-muted); margin-right: 2px; }
+.filter-btn { padding: 4px 10px; font-size: 11px; }
+.filter-btn[aria-pressed="true"] { border-color: var(--accent); color: var(--text-primary); }
 
 /* ---------- horizontal bar chart (magnitude → one hue) ---------- */
 .hbar-chart { display: flex; flex-direction: column; gap: 9px; }
@@ -225,8 +250,10 @@ html, body {
 .legend-item { display: inline-flex; align-items: center; gap: 6px; }
 .legend-sep { color: var(--text-muted); }
 .swatch { display: inline-block; }
-.swatch.arc-normal { width: 18px; height: 2px; border-radius: 2px; background: var(--accent); box-shadow: 0 0 6px var(--accent); }
-.swatch.arc-whale  { width: 18px; height: 3px; border-radius: 2px; background: var(--whale); box-shadow: 0 0 6px var(--whale); }
+.swatch.arc-retail { width: 14px; height: 2px; border-radius: 2px; background: rgba(57,135,229,0.55); }
+.swatch.arc-mid    { width: 14px; height: 2px; border-radius: 2px; background: #3987e5; box-shadow: 0 0 5px #3987e5; }
+.swatch.arc-large  { width: 14px; height: 3px; border-radius: 2px; background: #199e70; box-shadow: 0 0 5px #199e70; }
+.swatch.arc-whale  { width: 14px; height: 3px; border-radius: 2px; background: var(--whale); box-shadow: 0 0 6px var(--whale); }
 .swatch.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px var(--accent-soft); }
 
 /* globe tooltip (globe.gl injects .scene-tooltip) */

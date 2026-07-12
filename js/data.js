@@ -45,14 +45,31 @@ export const CITY_BY_ID = Object.fromEntries(CITIES.map(c => [c.id, c]));
  * unidentified and geo-estimated.
  */
 export const KNOWN_WALLETS = {
-  rEb8TK3gBgk5auZkwc6sHnwrGVJH8DuaLh: { entity: 'Binance',  cityId: 'mlt' },
-  rLNaPoKeeBjZe2qs6x52yVPZpZ8td4dc6w: { entity: 'Binance',  cityId: 'mlt' },
-  rvYAfWj5gh67oV6fW32ZzP3Aw4Eubs59B:  { entity: 'Bitstamp', cityId: 'lux' },
-  rLHzPsX6oXkzU2qL12kHCH8G8cnZv1rBJh: { entity: 'Kraken',   cityId: 'sfo' },
-  rw2ciyaNshpHe7bCHo4bRWq6pqqynnWKQg: { entity: 'Coinbase', cityId: 'nyc' },
-  rPVMhWBsfF9iMXYj3aAzJVkPDTFNSyWdKy: { entity: 'Bittrex',  cityId: 'sea' },
-  rLW9gnQo7BQhU6igk5keqYnH3TVrCxGRzm: { entity: 'Bitfinex', cityId: 'hkg' },
+  rEb8TK3gBgk5auZkwc6sHnwrGVJH8DuaLh: { entity: 'Binance',  cityId: 'mlt', type: 'exchange' },
+  rLNaPoKeeBjZe2qs6x52yVPZpZ8td4dc6w: { entity: 'Binance',  cityId: 'mlt', type: 'exchange' },
+  rvYAfWj5gh67oV6fW32ZzP3Aw4Eubs59B:  { entity: 'Bitstamp', cityId: 'lux', type: 'exchange' },
+  rLHzPsX6oXkzU2qL12kHCH8G8cnZv1rBJh: { entity: 'Kraken',   cityId: 'sfo', type: 'exchange' },
+  rw2ciyaNshpHe7bCHo4bRWq6pqqynnWKQg: { entity: 'Coinbase', cityId: 'nyc', type: 'exchange' },
+  rPVMhWBsfF9iMXYj3aAzJVkPDTFNSyWdKy: { entity: 'Bittrex',  cityId: 'sea', type: 'exchange' },
+  rLW9gnQo7BQhU6igk5keqYnH3TVrCxGRzm: { entity: 'Bitfinex', cityId: 'hkg', type: 'exchange' },
 };
+
+/**
+ * Size cohorts for classifying individual payments. Bounds are XRP amounts;
+ * a payment belongs to the first tier whose max it does not exceed. Rough
+ * behavioral reading: retail ≈ individuals, mid ≈ active traders / small
+ * desks, large ≈ funds & OTC desks, whale ≈ major holders / treasuries.
+ */
+export const TIERS = [
+  { id: 'retail', label: 'Retail',      max: 10_000,    color: 'rgba(57,135,229,0.55)',  head: 'rgba(109,167,236,0.75)' },
+  { id: 'mid',    label: 'Mid-size',    max: 100_000,   color: 'rgba(57,135,229,0.85)',  head: 'rgba(140,200,255,0.95)' },
+  { id: 'large',  label: 'Large',       max: 1_000_000, color: 'rgba(25,158,112,0.85)',  head: 'rgba(80,220,170,0.95)'  },
+  { id: 'whale',  label: 'Whale',       max: Infinity,  color: 'rgba(213,81,129,0.85)',  head: 'rgba(244,140,180,0.95)' },
+];
+
+export function classifyAmount(xrp) {
+  return TIERS.find(t => xrp < t.max) || TIERS[TIERS.length - 1];
+}
 
 /**
  * Estimated holdings by identifiable entity, in billions of XRP.
@@ -117,6 +134,6 @@ export function estimateCity(address) {
 /** Resolve an XRPL address to { city, entity, known }. */
 export function locateAccount(address) {
   const known = KNOWN_WALLETS[address];
-  if (known) return { city: CITY_BY_ID[known.cityId], entity: known.entity, known: true };
-  return { city: estimateCity(address), entity: null, known: false };
+  if (known) return { city: CITY_BY_ID[known.cityId], entity: known.entity, type: known.type, known: true };
+  return { city: estimateCity(address), entity: null, type: null, known: false };
 }
