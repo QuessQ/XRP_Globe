@@ -22,6 +22,14 @@ const ENDPOINTS = [
 const CONNECT_TIMEOUT_MS = 6000;
 const STALL_TIMEOUT_MS = 45000; // no traffic for this long → reconnect
 
+/** Standard normal deviate (Box–Muller), for the simulation's size distribution. */
+function gauss() {
+  let u = 0, v = 0;
+  while (u === 0) u = Math.random();
+  while (v === 0) v = Math.random();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+
 export class PaymentFeed {
   /**
    * @param {(p: object) => void} onPayment
@@ -156,10 +164,10 @@ export class PaymentFeed {
     const from = this.pickCity();
     let to = this.pickCity();
     while (to === from) to = this.pickCity();
-    // Log-normal-ish sizes: mostly retail, occasional whale.
-    let amountXRP = Math.exp(Math.random() * 4.5 + 4); // ~55 … ~5M
-    if (Math.random() < 0.03) amountXRP *= 20;
-    amountXRP = Math.min(amountXRP, 80e6);
+    // Log-normal sizes drawn in log10 space: median ~400 XRP with a heavy
+    // right tail, so the mix spans every cohort the way real ledger traffic
+    // does — roughly 85% retail, 11% mid, 3% large, ~1% whale.
+    const amountXRP = Math.min(10 ** (2.6 + gauss() * 1.4), 120e6);
     return {
       amountXRP: Math.round(amountXRP * 100) / 100,
       from: { city: from, entity: null, known: false },
