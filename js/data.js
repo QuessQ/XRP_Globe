@@ -76,12 +76,15 @@ export function classifyAmount(xrp) {
  * Sources: Ripple's published escrow figure + public rich-list / exchange
  * reserve snapshots (order-of-magnitude; exchange balances move daily).
  */
+export const HOLDINGS_AS_OF = 'mid-2026';
+
 export const HOLDINGS = [
   { entity: 'Ripple — escrow',      cityId: 'sfo', region: 'North America', billions: 35.8 },
   { entity: 'Ripple — operational', cityId: 'sfo', region: 'North America', billions: 4.6  },
-  { entity: 'Upbit',                cityId: 'sel', region: 'Asia',          billions: 5.9  },
-  { entity: 'Binance',              cityId: 'mlt', region: 'Europe',        billions: 2.9  },
-  { entity: 'Bithumb',              cityId: 'sel', region: 'Asia',          billions: 1.2  },
+  { entity: 'Bithumb',              cityId: 'sel', region: 'Asia',          billions: 1.8  },
+  { entity: 'Binance',              cityId: 'mlt', region: 'Europe',        billions: 1.7  },
+  { entity: 'Upbit',                cityId: 'sel', region: 'Asia',          billions: 1.4  },
+  { entity: 'Uphold',               cityId: 'nyc', region: 'North America', billions: 1.2  },
   { entity: 'Coinbase',             cityId: 'nyc', region: 'North America', billions: 0.9  },
   { entity: 'Kraken',               cityId: 'sfo', region: 'North America', billions: 0.6  },
   { entity: 'Bitso',                cityId: 'mex', region: 'Latin America', billions: 0.4  },

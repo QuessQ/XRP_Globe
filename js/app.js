@@ -5,8 +5,8 @@
  */
 
 import {
-  CITIES, CITY_HOLDINGS, CITY_ENTITIES, HOLDINGS, UNIDENTIFIED, TOTAL_SUPPLY_B,
-  TIERS, classifyAmount,
+  CITIES, CITY_HOLDINGS, CITY_ENTITIES, HOLDINGS, HOLDINGS_AS_OF, UNIDENTIFIED,
+  TOTAL_SUPPLY_B, TIERS, classifyAmount,
 } from './data.js';
 import { PaymentFeed } from './feed.js';
 
@@ -173,6 +173,8 @@ const corridors = new Map();
 const tierStats = new Map(TIERS.map(t => [t.id, { count: 0, volume: 0 }]));
 const exFlow = { in: 0, out: 0, txIn: 0, txOut: 0 }; // vs identified exchange wallets
 const whaleLog = [];
+const ledgerLog = []; // every observed payment, for CSV export
+const LEDGER_LOG_MAX = 20000;
 
 function onPayment(p) {
   stats.count++;
@@ -182,6 +184,10 @@ function onPayment(p) {
   const tier = classifyAmount(p.amountXRP);
   const ts = tierStats.get(tier.id);
   ts.count++; ts.volume += p.amountXRP;
+
+  if (ledgerLog.length < LEDGER_LOG_MAX) {
+    ledgerLog.push({ t: new Date().toISOString(), p, tier: tier.id });
+  }
 
   // Exchange deposit/withdrawal detection (identified wallets only).
   // Deposits (→ exchange) read as potential sell-side pressure; withdrawals
@@ -311,6 +317,31 @@ setInterval(() => {
   }
 }, 800);
 
+// CSV export of everything observed this session, so a session can be taken
+// into a spreadsheet or notebook rather than only watched.
+$('export-csv').addEventListener('click', () => {
+  if (!ledgerLog.length) return;
+  const esc = (v) => `"${String(v).replace(/"/g, '""')}"`;
+  const rows = [
+    ['timestamp_utc', 'amount_xrp', 'tier', 'from_entity', 'from_city', 'from_country',
+     'from_identified', 'to_entity', 'to_city', 'to_country', 'to_identified',
+     'source', 'tx_hash'].join(','),
+    ...ledgerLog.map(({ t, p, tier }) => [
+      t, p.amountXRP, tier,
+      p.from.entity || '', p.from.city.name, p.from.city.country, p.from.known,
+      p.to.entity || '', p.to.city.name, p.to.city.country, p.to.known,
+      p.live ? 'ledger' : 'simulated', p.hash || '',
+    ].map(esc).join(',')),
+  ].join('\n');
+
+  const url = URL.createObjectURL(new Blob([rows], { type: 'text/csv' }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `xrp-pulse-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
 // Arc size filter buttons.
 document.querySelectorAll('.filter-btn').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -368,6 +399,8 @@ function bar(name, loc, billions, max, other = false) {
 }
 
 function renderHoldings() {
+  $('holdings-asof').textContent = HOLDINGS_AS_OF;
+
   // Holder-type rollup: institutional (Ripple treasury/escrow), exchange
   // reserves (custodial, effectively retail+institutional client funds),
   // and the unlocatable self-custody remainder.

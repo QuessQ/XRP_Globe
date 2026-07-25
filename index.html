@@ -30,7 +30,9 @@
 
 <!-- Left: live activity -->
 <aside id="panel-left" class="panel panel-left" aria-label="Live network activity">
-  <h2>Live activity <span class="muted">(this session)</span></h2>
+  <h2>Live activity <span class="muted">(this session)</span>
+    <button id="export-csv" class="ctl-btn export-btn" title="Download all observed payments as CSV">⬇ CSV</button>
+  </h2>
   <div class="tiles">
     <div class="tile">
       <span class="tile-label">Payments</span>
@@ -86,8 +88,8 @@
 <!-- Right: holdings estimate -->
 <aside id="panel-right" class="panel panel-right" aria-label="Estimated XRP holdings">
   <h2>Where XRP is held <span class="muted">(estimate)</span></h2>
-  <p class="panel-note">Share of the ~99.99B XRP total supply, by identifiable entity. Values are
-  best-effort estimates — see methodology.</p>
+  <p class="panel-note">Share of the ~99.99B XRP total supply, by identifiable entity. Best-effort
+  estimates as of <span id="holdings-asof"></span> — see methodology.</p>
 
   <h3>By holder type</h3>
   <div id="type-chart" class="hbar-chart hbar-chart-compact" role="img" aria-label="Bar chart of estimated XRP holdings by holder type"></div>

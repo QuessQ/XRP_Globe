@@ -7,20 +7,41 @@ cities in real time, with an estimate of where the XRP supply is held.
 
 ## Features
 
+### The globe
 - **Rotating night-earth globe** (globe.gl / Three.js) — drag to rotate, scroll
   to zoom, click a city for a detail card with holdings and session flow stats.
 - **Live payment stream** — connects to the public XRP Ledger websocket cluster
   (`xrplcluster.com`, `s1/s2.ripple.com`) and animates every validated XRP
-  payment as a glowing arc; whale payments (≥ 1M XRP) glow magenta with a
-  larger impact ripple.
+  payment as a glowing arc, colored by size cohort, with an impact ripple at
+  the destination.
 - **Simulation fallback** — if the websocket can't be reached, the app switches
   to a statistical simulation built from the same corridor weights (badge shows
   `SIMULATED` instead of `LIVE`).
-- **Live activity panel** — payments seen, XRP moved, payments/min, largest
-  payment, top corridors, and a scrolling payment feed with explorer links.
-- **Holdings estimate panel** — bar charts of estimated XRP holdings by entity
-  and by region, with a computed headline of where the majority sits, a table
-  view, and a methodology note.
+- **Size filters** — `All / ≥10K / ≥100K / Whales only` declutter the globe to
+  one class of actor. Statistics keep counting every payment regardless.
+
+### Flow analysis
+- **Size cohorts** — every payment is classified as **Retail** (<10K XRP),
+  **Mid-size** (<100K), **Large** (<1M) or **Whale** (≥1M), with a per-cohort
+  share of session volume. Tells you whether the tape is retail churn or
+  institutional-size blocks.
+- **Exchange flows** — deposits to vs withdrawals from identified exchange
+  wallets, with a net figure. Net inflow reads as sell-side pressure; net
+  outflow reads as accumulation into custody.
+- **Whale watch** — a log of recent ≥1M XRP movements with route, timestamp
+  and a link to the transaction on the XRPL explorer.
+- **Net flow leaders** — which cities gained or lost the most XRP this session.
+- **Top corridors** — the most-travelled city pairs.
+- **CSV export** — download every payment observed this session (timestamp,
+  amount, cohort, both endpoints, whether each endpoint was identified or
+  geo-estimated, live-vs-simulated, tx hash) for spreadsheet or notebook work.
+
+### Holdings
+- **By holder type** — institutional (Ripple treasury & escrow), exchange
+  reserves (custodial client funds), and the self-custody remainder, plus a
+  note on why government holdings aren't separately identifiable.
+- **By entity and by region** — bar charts with a computed headline of where
+  the majority sits, a table view, and a methodology note.
 
 ## Run it
 
@@ -48,9 +69,21 @@ XRP transactions carry **no geographic data**. This app:
    an asterisk in the feed and described as *estimated*.
 
 Holdings figures combine Ripple's published escrow balance with public
-rich-list / exchange-reserve snapshots — order-of-magnitude estimates, not
-audited figures. The "self-custody & unidentified" remainder (~45% of supply)
-cannot be located at all.
+rich-list / exchange-reserve snapshots (mid-2026) — order-of-magnitude
+estimates, not audited figures. Exchange balances move daily. The
+"self-custody & unidentified" remainder (~49% of supply) cannot be located at
+all, and any government holdings sit inside it: no state XRP treasury is
+verifiably identified on-ledger.
+
+Two further limits worth knowing before drawing conclusions:
+
+- **Exchange-flow figures only count identified wallets.** The wallet map in
+  `js/data.js` currently covers a handful of major exchanges, so the net-flow
+  number is a directional signal on a sample, not a market-wide total. Adding
+  attributed addresses there directly widens the coverage.
+- **Session statistics start at page load.** They describe what this browser
+  tab has watched, not a historical window. Use the CSV export if you want a
+  record that outlives the tab.
 
 ## Project layout
 
