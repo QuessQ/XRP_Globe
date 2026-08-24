@@ -187,6 +187,96 @@ function renderTable() {
     </table>`;
 }
 
+/* Live XRP price line chart (CoinGecko public API, fetched client-side).
+   Falls back to a link when the network or a strict CSP blocks the request. */
+async function priceChart(days) {
+  const mount = document.getElementById("chart-price");
+  mount.innerHTML = `<p class="section-note">Loading price data…</p>`;
+  let points;
+  try {
+    const res = await fetch(`https://api.coingecko.com/api/v3/coins/ripple/market_chart?vs_currency=usd&days=${days}`);
+    if (!res.ok) throw new Error(res.status);
+    points = (await res.json()).prices; // [ms, usd]
+  } catch (e) {
+    mount.innerHTML = `<p class="section-note">Live price data couldn't be loaded in this context.
+      See the current chart on <a href="https://www.coingecko.com/en/coins/xrp" target="_blank" rel="noopener">CoinGecko</a>
+      or <a href="https://www.tradingview.com/symbols/XRPUSD/" target="_blank" rel="noopener">TradingView</a>.</p>`;
+    return;
+  }
+  mount.innerHTML = "";
+  const W = Math.max(mount.clientWidth || 900, 600), H = 260;
+  const pad = { t: 16, r: 60, b: 24, l: 10 };
+  const xs = points.map((p) => p[0]), ys = points.map((p) => p[1]);
+  const x0 = xs[0], x1 = xs[xs.length - 1];
+  const yMin = Math.min(...ys), yMax = Math.max(...ys);
+  const X = (t) => pad.l + (t - x0) / (x1 - x0) * (W - pad.l - pad.r);
+  const Y = (v) => pad.t + (yMax - v) / ((yMax - yMin) || 1) * (H - pad.t - pad.b);
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("width", W); svg.setAttribute("height", H);
+
+  [yMax, (yMax + yMin) / 2, yMin].forEach((v) => {
+    const g = document.createElementNS(svg.namespaceURI, "line");
+    g.setAttribute("x1", pad.l); g.setAttribute("x2", W - pad.r);
+    g.setAttribute("y1", Y(v)); g.setAttribute("y2", Y(v));
+    g.setAttribute("stroke", "var(--gridline)");
+    svg.appendChild(g);
+    const t = document.createElementNS(svg.namespaceURI, "text");
+    t.setAttribute("x", W - pad.r + 6); t.setAttribute("y", Y(v) + 4);
+    t.setAttribute("fill", "var(--text-muted)"); t.setAttribute("font-size", "11");
+    t.textContent = "$" + v.toFixed(3);
+    svg.appendChild(t);
+  });
+
+  const d = points.map((p, i) => (i ? "L" : "M") + X(p[0]).toFixed(1) + " " + Y(p[1]).toFixed(1)).join("");
+  const area = document.createElementNS(svg.namespaceURI, "path");
+  area.setAttribute("d", d + `L${X(x1)} ${H - pad.b}L${X(x0)} ${H - pad.b}Z`);
+  area.setAttribute("fill", "var(--accent-soft)");
+  svg.appendChild(area);
+  const line = document.createElementNS(svg.namespaceURI, "path");
+  line.setAttribute("d", d);
+  line.setAttribute("fill", "none");
+  line.setAttribute("stroke", "var(--accent)");
+  line.setAttribute("stroke-width", "2");
+  svg.appendChild(line);
+
+  const last = points[points.length - 1];
+  const dot = document.createElementNS(svg.namespaceURI, "circle");
+  dot.setAttribute("cx", X(last[0])); dot.setAttribute("cy", Y(last[1]));
+  dot.setAttribute("r", 4); dot.setAttribute("fill", "var(--accent)");
+  svg.appendChild(dot);
+
+  // crosshair + tooltip
+  const cross = document.createElementNS(svg.namespaceURI, "line");
+  cross.setAttribute("y1", pad.t); cross.setAttribute("y2", H - pad.b);
+  cross.setAttribute("stroke", "rgba(255,255,255,0.3)");
+  cross.setAttribute("visibility", "hidden");
+  svg.appendChild(cross);
+  svg.addEventListener("mousemove", (e) => {
+    const r = svg.getBoundingClientRect();
+    const t = x0 + (e.clientX - r.left - pad.l) / (W - pad.l - pad.r) * (x1 - x0);
+    let i = points.findIndex((p) => p[0] >= t);
+    if (i < 0) i = points.length - 1;
+    const p = points[Math.max(0, i)];
+    cross.setAttribute("x1", X(p[0])); cross.setAttribute("x2", X(p[0]));
+    cross.setAttribute("visibility", "visible");
+    tooltip.innerHTML = `<strong>$${p[1].toFixed(4)}</strong><br><span class="t-sub">${new Date(p[0]).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}</span>`;
+    tooltip.style.display = "block";
+    tooltip.style.left = Math.min(e.clientX + 14, innerWidth - 180) + "px";
+    tooltip.style.top = (e.clientY + 14) + "px";
+  });
+  svg.addEventListener("mouseleave", () => { cross.setAttribute("visibility", "hidden"); tooltip.style.display = "none"; });
+  mount.appendChild(svg);
+}
+
+document.querySelectorAll(".range-btn").forEach((b) => {
+  b.addEventListener("click", () => {
+    document.querySelectorAll(".range-btn").forEach((o) => o.removeAttribute("aria-pressed"));
+    b.setAttribute("aria-pressed", "true");
+    priceChart(b.dataset.days);
+  });
+});
+priceChart(365);
+
 document.getElementById("asof-date").textContent = DATA.asOf;
 renderTiles();
 renderTable();

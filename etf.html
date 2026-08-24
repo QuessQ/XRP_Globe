@@ -119,6 +119,21 @@ ul.facts a { font-size: 12px; }
   </section>
 
   <section>
+    <h2>XRP price movement <span class="muted">(US$, live from CoinGecko)</span>
+      <span id="price-ranges" style="float:right; display:inline-flex; gap:6px">
+        <button class="ctl-btn range-btn" data-days="7">7D</button>
+        <button class="ctl-btn range-btn" data-days="30">30D</button>
+        <button class="ctl-btn range-btn" data-days="365" aria-pressed="true">1Y</button>
+      </span>
+    </h2>
+    <p class="section-note">Fetched live in your browser from CoinGecko's public API, so this panel is always
+      current (unlike the dated snapshot figures elsewhere on the page). Context from coverage: a falling channel
+      since Oct 2025 (roughly $0.85–$1.60), resistance at $1.80–$2.00 from the January bounce, and repeated tests
+      of the $1.00 level in August.</p>
+    <div class="chart-wrap" id="chart-price"></div>
+  </section>
+
+  <section>
     <h2>Net flows by month <span class="muted">(US$ millions, 2026)</span></h2>
     <p class="section-note">Combined net creations minus redemptions across all US spot XRP ETFs.
       Launch months (Nov–Dec 2025) absorbed the bulk of the ~$1.5B cumulative total; 2026 monthly
