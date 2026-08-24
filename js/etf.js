@@ -277,6 +277,81 @@ document.querySelectorAll(".range-btn").forEach((b) => {
 });
 priceChart(365);
 
+/* Long-range scenarios — published analyst forecasts (see page notes for sources).
+   capB = implied market cap at ~64B circulating XRP, in US$ billions. */
+const SCENARIOS = [
+  { year: "2027", bear: 1.01, base: 2.63, bull: 7.00,
+    note: "Aggregator range $1.01–$2.63 (cryptonews/Kraken); Standard Chartered target $7" },
+  { year: "2030", bear: 1.57, base: 4.63, bull: 26.97,
+    note: "Aggregator range $1.57–$4.63; most aggressive published call ~$27" },
+  { year: "2035", bear: 2.00, base: 8.00, bull: 40.00,
+    note: "Beyond most models — extrapolations only, treat as illustrative" },
+];
+const CIRCULATING_B = 64; // ~64B XRP circulating
+
+function renderScenarios() {
+  const cap = (p) => "$" + (p * CIRCULATING_B).toFixed(0) + "B";
+  document.getElementById("scenario-table").innerHTML = `
+    <table>
+      <thead><tr><th>Horizon</th><th class="num">Bear</th><th class="num">Base</th><th class="num">Bull</th>
+        <th class="num">Implied cap (base / bull)</th><th>Basis</th></tr></thead>
+      <tbody>${SCENARIOS.map((s) => `
+        <tr><td>${s.year}</td>
+          <td class="num">$${s.bear.toFixed(2)}</td>
+          <td class="num">$${s.base.toFixed(2)}</td>
+          <td class="num">$${s.bull.toFixed(2)}</td>
+          <td class="num">${cap(s.base)} / ${cap(s.bull)}</td>
+          <td>${s.note}</td></tr>`).join("")}
+      </tbody>
+    </table>`;
+}
+
+/* Projection calculator: lump sum + monthly contributions at an average buy price,
+   valued at each target price. Pure arithmetic — no return assumptions. */
+function renderCalc() {
+  const num = (id) => Math.max(parseFloat(document.getElementById(id).value) || 0, 0);
+  const lump = num("calc-lump"), monthly = num("calc-monthly"), months = num("calc-months");
+  const buy = num("calc-buy") || 0.01, target = num("calc-target") || 0.01;
+  const invested = lump + monthly * months;
+  const xrp = invested / buy;
+
+  const fmt$ = (v) => "$" + v.toLocaleString(undefined, { maximumFractionDigits: 0 });
+  document.getElementById("calc-tiles").innerHTML = `
+    <div class="tile"><span class="tile-label">Total invested</span>
+      <span class="tile-value">${fmt$(invested)}</span>
+      <span class="tile-sub">${fmt$(lump)} now + ${fmt$(monthly)} × ${months} months</span></div>
+    <div class="tile"><span class="tile-label">XRP accumulated</span>
+      <span class="tile-value">${xrp.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+      <span class="tile-sub">at $${buy.toFixed(2)} average buy price</span></div>
+    <div class="tile"><span class="tile-label">Value at your target ($${target.toFixed(2)})</span>
+      <span class="tile-value ${target >= buy ? "pos" : "neg"}">${fmt$(xrp * target)}</span>
+      <span class="tile-sub">${(target / buy).toFixed(1)}× your cost basis</span></div>`;
+
+  const rows = [];
+  SCENARIOS.forEach((s) => ["bear", "base", "bull"].forEach((k) =>
+    rows.push({ label: `${s.year} ${k}`, price: s[k] })));
+  rows.push({ label: "Your custom target", price: target });
+  document.getElementById("calc-table").innerHTML = `
+    <table>
+      <thead><tr><th>Scenario</th><th class="num">XRP price</th><th class="num">Portfolio value</th>
+        <th class="num">Gain / loss</th><th class="num">Multiple</th></tr></thead>
+      <tbody>${rows.map((r) => {
+        const v = xrp * r.price, g = v - invested;
+        return `<tr><td>${r.label}</td>
+          <td class="num">$${r.price.toFixed(2)}</td>
+          <td class="num">${fmt$(v)}</td>
+          <td class="num"><span class="${g >= 0 ? "pos" : "neg"}">${g >= 0 ? "+" : "−"}${fmt$(Math.abs(g)).slice(1)}</span></td>
+          <td class="num">${(v / (invested || 1)).toFixed(2)}×</td></tr>`;
+      }).join("")}
+      </tbody>
+    </table>`;
+}
+
+renderScenarios();
+renderCalc();
+["calc-lump", "calc-monthly", "calc-months", "calc-buy", "calc-target"]
+  .forEach((id) => document.getElementById(id).addEventListener("input", renderCalc));
+
 document.getElementById("asof-date").textContent = DATA.asOf;
 renderTiles();
 renderTable();

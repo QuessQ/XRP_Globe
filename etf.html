@@ -77,6 +77,13 @@ ul.facts a { font-size: 12px; }
 .src { background: var(--surface-2); border: 1px solid var(--hairline); border-radius: 8px; padding: 10px 12px; font-size: 12px; color: var(--text-secondary); }
 .src a { font-weight: 650; font-size: 13px; display: block; margin-bottom: 3px; }
 
+.calc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin: 12px 0; }
+.calc-grid label { display: flex; flex-direction: column; gap: 5px; font-size: 11px; color: var(--text-muted);
+  letter-spacing: 0.05em; text-transform: uppercase; }
+.calc-grid input { background: var(--surface-2); border: 1px solid var(--hairline); border-radius: 8px;
+  color: var(--text-primary); font: 600 15px var(--font); padding: 8px 10px; width: 100%; }
+.calc-grid input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+
 #tooltip { position: fixed; pointer-events: none; z-index: 50; display: none;
   background: var(--surface-2); border: 1px solid var(--hairline); border-radius: 8px;
   padding: 7px 10px; font-size: 12px; color: var(--text-primary); box-shadow: 0 4px 18px rgba(0,0,0,0.5); }
@@ -212,6 +219,44 @@ ul.facts a { font-size: 12px; }
         Luxembourg and JFSA approvals in Japan —
         <a href="https://genfinity.io/2026/06/25/ripple-rlusd-japan-luxembourg-mica-global-regulatory-expansion/" target="_blank" rel="noopener">source</a> —
         while the US CLARITY Act stalls.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Projection calculator <span class="muted">— lump sum + monthly investing (DCA/EMI style)</span></h2>
+    <p class="section-note">Enter what you'd invest and your average buy price; the table shows what that stake
+      would be worth if XRP reaches each price target. Monthly contributions are assumed to buy at the same average
+      price — a simplification, since real DCA fills at market prices along the way. This is arithmetic, not
+      advice: the targets below come from published analyst forecasts that disagree wildly with each other.</p>
+    <div class="calc-grid">
+      <label>One-time investment (US$)<input id="calc-lump" type="number" min="0" value="1000"></label>
+      <label>Monthly contribution (US$)<input id="calc-monthly" type="number" min="0" value="100"></label>
+      <label>Months of contributions<input id="calc-months" type="number" min="0" value="24"></label>
+      <label>Average buy price (US$)<input id="calc-buy" type="number" min="0.01" step="0.01" value="1.00"></label>
+      <label>Custom target price (US$)<input id="calc-target" type="number" min="0.01" step="0.01" value="5.00"></label>
+    </div>
+    <div class="tiles" id="calc-tiles"></div>
+    <div class="table-scroll" id="calc-table"></div>
+  </section>
+
+  <section>
+    <h2>Long-range scenarios <span class="muted">— published forecasts, 2027 → 2035</span></h2>
+    <p class="section-note">These are other people's predictions, gathered for reference — they range from
+      sub-$1 to fantasy triple digits, which itself tells you how uncertain this is. The market-cap column is the
+      sanity check: price × ~64B circulating XRP. For scale, gold is ~$20T and all of crypto has peaked near $4T —
+      treat any target implying multi-trillion-dollar caps with heavy skepticism.</p>
+    <div class="table-scroll" id="scenario-table"></div>
+    <ul class="facts">
+      <li><strong>Bear case logic:</strong> ETF inflows stay weak, CLARITY Act keeps slipping, escrow supply
+        outpaces demand — aggregator floors sit around $1.00–$1.60 through 2030.</li>
+      <li><strong>Base case logic:</strong> regulation clears and ETF demand normalizes — aggregators cluster
+        around $2.50–$4.60 by 2030 (AMBCrypto, cryptonews, Kraken ranges).</li>
+      <li><strong>Bull case logic:</strong> Standard Chartered's Geoffrey Kendrick has a $7 target by 2027 on
+        payments adoption + ETF flows; the most aggressive published 2030–2040 calls reach ~$27 (implying a
+        ~$1.7T market cap — larger than all of crypto ex-Bitcoin today).</li>
+      <li><strong>What actually decides it:</strong> watch the dashboard's own signals — weekly ETF flows vs.
+        monthly escrow unlocks, whale accumulation, and US legislation. Predictions follow those; not the other
+        way around.</li>
     </ul>
   </section>
 
