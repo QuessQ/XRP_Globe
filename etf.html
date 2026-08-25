@@ -59,7 +59,28 @@ h2 .muted, .muted { color: var(--text-muted); font-weight: 500; font-size: 12px;
 .pos { color: #7be07b; } .neg { color: var(--outflow); }
 
 .chart-wrap { overflow-x: auto; }
-svg text { font-family: var(--font); }
+svg text { font-family: var(--font); pointer-events: none; }
+svg rect, svg path.seg, svg circle.dot-pt { cursor: pointer; }
+svg rect.bar { transition: height 0.7s cubic-bezier(0.2,0.7,0.3,1), y 0.7s cubic-bezier(0.2,0.7,0.3,1), opacity 0.2s ease, filter 0.15s ease; }
+svg rect.bar:hover, svg path.seg:hover { filter: brightness(1.25); }
+path.seg { transition: stroke-dashoffset 0.9s cubic-bezier(0.2,0.7,0.3,1), opacity 0.2s ease; }
+path.line-draw { transition: stroke-dashoffset 1.1s cubic-bezier(0.2,0.7,0.3,1); }
+path.area-fade { transition: opacity 0.8s ease 0.3s; }
+
+.viz-row { display: flex; flex-wrap: wrap; gap: 22px; align-items: center; }
+.donut-wrap { position: relative; flex: 0 0 auto; }
+.donut-center { position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; text-align: center; pointer-events: none; }
+.donut-center .dc-value { font-size: 19px; font-weight: 700; }
+.donut-center .dc-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; max-width: 90px; }
+.legend { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 7px; flex: 1 1 220px; min-width: 200px; }
+.legend li { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--text-secondary);
+  cursor: pointer; padding: 4px 6px; border-radius: 6px; transition: background 0.15s ease, opacity 0.15s ease; }
+.legend li:hover { background: rgba(255,255,255,0.06); }
+.legend li.dim { opacity: 0.35; }
+.legend .swatch { width: 10px; height: 10px; border-radius: 3px; flex: 0 0 auto; }
+.legend .lg-name { flex: 1; color: var(--text-primary); }
+.legend .lg-pct { font-variant-numeric: tabular-nums; color: var(--text-muted); }
 
 table { width: 100%; border-collapse: collapse; font-size: 13px; }
 th { text-align: left; font-size: 11px; color: var(--text-muted); letter-spacing: 0.05em;
@@ -147,6 +168,10 @@ ul.facts a { font-size: 12px; }
       Launch months (Nov–Dec 2025) absorbed the bulk of the ~$1.5B cumulative total; 2026 monthly
       figures below are as reported by SoSoValue-based coverage.</p>
     <div class="chart-wrap" id="chart-monthly"></div>
+    <h2 style="margin-top:18px">Running total <span class="muted">— cumulative net flow, Apr–Aug 2026</span></h2>
+    <p class="section-note">Same five months, added up. Hover the line to see the running total at any point;
+      the climb shows how consistently positive months compound even when any single month looks unremarkable.</p>
+    <div class="chart-wrap" id="chart-cumulative"></div>
   </section>
 
   <section>
@@ -164,6 +189,8 @@ ul.facts a { font-size: 12px; }
     <p class="section-note" style="margin-top:10px">Cumulative net inflows per fund
       (US$ millions, since each fund's launch, as reported through Aug 24, 2026):</p>
     <div class="chart-wrap" id="chart-funds"></div>
+    <h2 style="margin-top:18px">Share of cumulative inflows <span class="muted">— click a fund to isolate it</span></h2>
+    <div class="viz-row" id="donut-funds"></div>
   </section>
 
   <section>
@@ -172,6 +199,8 @@ ul.facts a { font-size: 12px; }
       overlap is possible (e.g. a whale wallet can also be an exchange wallet), so they are a map, not an exact
       partition. The clear 2026 trend: coins are leaving exchanges for self-custody and ETF cold storage.</p>
     <div class="chart-wrap" id="chart-supply"></div>
+    <h2 style="margin-top:18px">Supply map, by share <span class="muted">— click a bucket to isolate it</span></h2>
+    <div class="viz-row" id="donut-supply"></div>
     <h2 style="margin-top:18px">Exchange outflows &amp; whale activity <span class="muted">(August 2026)</span></h2>
     <ul class="facts">
       <li><strong>Exchange reserves shrinking:</strong> XRP balances on Upbit, Binance and Bithumb fell ~240M tokens

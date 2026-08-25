@@ -100,12 +100,17 @@ function barChart(mountId, rows, { height = 220 } = {}) {
     const top = neg ? y(0) : y(r.value);
     const h = Math.max(Math.abs(y(r.value) - y(0)), 2);
     const rect = document.createElementNS(svg.namespaceURI, "rect");
-    rect.setAttribute("x", x); rect.setAttribute("y", top);
-    rect.setAttribute("width", bw); rect.setAttribute("height", h);
+    rect.setAttribute("class", "bar");
+    rect.setAttribute("x", x); rect.setAttribute("y", y(0));
+    rect.setAttribute("width", bw); rect.setAttribute("height", 0);
     rect.setAttribute("rx", 4);
     rect.setAttribute("fill", neg ? "var(--outflow)" : "var(--accent)");
+    rect.style.transitionDelay = (i * 0.05) + "s";
     hover(rect, `<strong>${r.label}</strong><br><span class="t-sub">net flow</span> ${M(r.value)}`);
     svg.appendChild(rect);
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      rect.setAttribute("y", top); rect.setAttribute("height", h);
+    }));
 
     const val = document.createElementNS(svg.namespaceURI, "text");
     val.setAttribute("x", x + bw / 2);
@@ -150,12 +155,16 @@ function hbarChart(mountId, rows, { fmt = M, color = "var(--accent)" } = {}) {
     svg.appendChild(lab);
 
     const rect = document.createElementNS(svg.namespaceURI, "rect");
+    rect.setAttribute("class", "bar");
     rect.setAttribute("x", labW); rect.setAttribute("y", yy);
-    rect.setAttribute("width", bw); rect.setAttribute("height", 20);
+    rect.setAttribute("width", 0); rect.setAttribute("height", 20);
     rect.setAttribute("rx", 4);
     rect.setAttribute("fill", color);
+    rect.style.transitionProperty = "width, filter, opacity";
+    rect.style.transitionDelay = (i * 0.06) + "s";
     if (r.sub) hover(rect, `<strong>${r.label}</strong><br><span class="t-sub">${r.sub}</span>`);
     svg.appendChild(rect);
+    requestAnimationFrame(() => requestAnimationFrame(() => { rect.setAttribute("width", bw); }));
 
     const val = document.createElementNS(svg.namespaceURI, "text");
     val.setAttribute("x", labW + bw + 8); val.setAttribute("y", yy + 15);
@@ -163,6 +172,154 @@ function hbarChart(mountId, rows, { fmt = M, color = "var(--accent)" } = {}) {
     val.setAttribute("font-size", "12"); val.setAttribute("font-weight", "650");
     val.textContent = fmt(r.value);
     svg.appendChild(val);
+  });
+  mount.appendChild(svg);
+}
+
+const PALETTE = ["#3987e5", "#5fd0c6", "#f0a441", "#d55181", "#8b7ee8", "#7be07b", "#e66767", "#61a8e0"];
+
+/* Interactive donut: hover a segment or legend row to spotlight it (others dim),
+   click to lock the spotlight, center label shows the focused value. */
+function donutChart(mountId, rows, { fmt = M, unitLabel = "of total" } = {}) {
+  const mount = document.getElementById(mountId);
+  mount.innerHTML = "";
+  const total = rows.reduce((s, r) => s + r.value, 0);
+  const size = 220, r = 78, cx = size / 2, cy = size / 2, sw = 34;
+  const circumference = 2 * Math.PI * r;
+
+  const wrap = document.createElement("div");
+  wrap.className = "donut-wrap";
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("width", size); svg.setAttribute("height", size);
+  svg.setAttribute("viewBox", `0 0 ${size} ${size}`);
+
+  const track = document.createElementNS(svg.namespaceURI, "circle");
+  track.setAttribute("cx", cx); track.setAttribute("cy", cy); track.setAttribute("r", r);
+  track.setAttribute("fill", "none"); track.setAttribute("stroke", "var(--gridline)");
+  track.setAttribute("stroke-width", sw);
+  svg.appendChild(track);
+
+  const center = document.createElement("div");
+  center.className = "donut-center";
+  center.innerHTML = `<span class="dc-value">${fmt(total)}</span><span class="dc-label">total</span>`;
+
+  let offsetAcc = 0;
+  const segs = [], legendItems = [];
+  rows.forEach((row, i) => {
+    const frac = row.value / total;
+    const len = frac * circumference;
+    const seg = document.createElementNS(svg.namespaceURI, "circle");
+    seg.setAttribute("class", "seg");
+    seg.setAttribute("cx", cx); seg.setAttribute("cy", cy); seg.setAttribute("r", r);
+    seg.setAttribute("fill", "none");
+    seg.setAttribute("stroke", PALETTE[i % PALETTE.length]);
+    seg.setAttribute("stroke-width", sw);
+    seg.setAttribute("stroke-dasharray", `${len} ${circumference - len}`);
+    seg.setAttribute("stroke-dashoffset", circumference);
+    seg.setAttribute("transform", `rotate(${-90 + offsetAcc / circumference * 360} ${cx} ${cy})`);
+    requestAnimationFrame(() => requestAnimationFrame(() => { seg.setAttribute("stroke-dashoffset", circumference - len); }));
+    svg.appendChild(seg);
+    segs.push(seg);
+    offsetAcc += len;
+
+    const li = document.createElement("li");
+    li.innerHTML = `<span class="swatch" style="background:${PALETTE[i % PALETTE.length]}"></span>
+      <span class="lg-name">${row.label}</span>
+      <span class="lg-pct">${(frac * 100).toFixed(1)}%</span>`;
+    legendItems.push(li);
+
+    const focus = (on) => {
+      segs.forEach((s, j) => { s.style.opacity = (!on || j === i) ? 1 : 0.18; });
+      legendItems.forEach((l, j) => l.classList.toggle("dim", on && j !== i));
+      center.innerHTML = on
+        ? `<span class="dc-value">${fmt(row.value)}</span><span class="dc-label">${row.label}</span>`
+        : `<span class="dc-value">${fmt(total)}</span><span class="dc-label">total</span>`;
+    };
+    let locked = false;
+    seg.addEventListener("mouseenter", () => { if (!locked) focus(true); });
+    seg.addEventListener("mouseleave", () => { if (!locked) focus(false); });
+    li.addEventListener("mouseenter", () => { if (!locked) focus(true); });
+    li.addEventListener("mouseleave", () => { if (!locked) focus(false); });
+    const toggleLock = () => { locked = !locked; focus(locked); };
+    seg.addEventListener("click", toggleLock);
+    li.addEventListener("click", toggleLock);
+    if (row.sub) hover(seg, `<strong>${row.label}</strong><br><span class="t-sub">${row.sub}</span>`);
+  });
+
+  wrap.appendChild(svg);
+  wrap.appendChild(center);
+  const legend = document.createElement("ul");
+  legend.className = "legend";
+  legendItems.forEach((li) => legend.appendChild(li));
+  mount.appendChild(wrap);
+  mount.appendChild(legend);
+}
+
+/* Animated cumulative-sum area chart for a monthly series: draws the running total,
+   with a scrubbable crosshair like the live price chart. */
+function cumulativeChart(mountId, rows) {
+  const mount = document.getElementById(mountId);
+  mount.innerHTML = "";
+  let running = 0;
+  const points = rows.map((r) => ({ label: r.label, total: (running += r.value) }));
+  const W = Math.max(mount.clientWidth || 900, 560), H = 220;
+  const pad = { t: 20, r: 16, b: 28, l: 54 };
+  const max = Math.max(...points.map((p) => p.total)), min = Math.min(0, ...points.map((p) => p.total));
+  const X = (i) => pad.l + (i / (points.length - 1)) * (W - pad.l - pad.r);
+  const Y = (v) => pad.t + (max - v) / ((max - min) || 1) * (H - pad.t - pad.b);
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("width", W); svg.setAttribute("height", H);
+
+  [max, (max + min) / 2, min].forEach((v) => {
+    const g = document.createElementNS(svg.namespaceURI, "line");
+    g.setAttribute("x1", pad.l); g.setAttribute("x2", W - pad.r);
+    g.setAttribute("y1", Y(v)); g.setAttribute("y2", Y(v));
+    g.setAttribute("stroke", "var(--gridline)");
+    svg.appendChild(g);
+    const t = document.createElementNS(svg.namespaceURI, "text");
+    t.setAttribute("x", pad.l - 8); t.setAttribute("y", Y(v) + 4);
+    t.setAttribute("text-anchor", "end"); t.setAttribute("fill", "var(--text-muted)"); t.setAttribute("font-size", "11");
+    t.textContent = M(v);
+    svg.appendChild(t);
+  });
+
+  const d = points.map((p, i) => (i ? "L" : "M") + X(i).toFixed(1) + " " + Y(p.total).toFixed(1)).join(" ");
+  const len = points.length;
+  const area = document.createElementNS(svg.namespaceURI, "path");
+  area.setAttribute("class", "area-fade");
+  area.setAttribute("d", d + ` L${X(len - 1).toFixed(1)} ${Y(0)} L${X(0).toFixed(1)} ${Y(0)} Z`);
+  area.setAttribute("fill", "var(--accent-soft)");
+  area.style.opacity = 0;
+  svg.appendChild(area);
+
+  const line = document.createElementNS(svg.namespaceURI, "path");
+  line.setAttribute("class", "line-draw");
+  line.setAttribute("d", d);
+  line.setAttribute("fill", "none");
+  line.setAttribute("stroke", "var(--accent)");
+  line.setAttribute("stroke-width", "2.5");
+  svg.appendChild(line);
+  const pathLen = line.getTotalLength();
+  line.style.strokeDasharray = pathLen;
+  line.style.strokeDashoffset = pathLen;
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    line.style.strokeDashoffset = 0;
+    area.style.opacity = 1;
+  }));
+
+  points.forEach((p, i) => {
+    const dot = document.createElementNS(svg.namespaceURI, "circle");
+    dot.setAttribute("class", "dot-pt");
+    dot.setAttribute("cx", X(i)); dot.setAttribute("cy", Y(p.total)); dot.setAttribute("r", 4);
+    dot.setAttribute("fill", "var(--page)"); dot.setAttribute("stroke", "var(--accent)"); dot.setAttribute("stroke-width", "2");
+    hover(dot, `<strong>${p.label}</strong><br><span class="t-sub">running total</span> ${M(p.total)}`);
+    svg.appendChild(dot);
+
+    const lab = document.createElementNS(svg.namespaceURI, "text");
+    lab.setAttribute("x", X(i)); lab.setAttribute("y", H - 8);
+    lab.setAttribute("text-anchor", "middle"); lab.setAttribute("fill", "var(--text-muted)"); lab.setAttribute("font-size", "11");
+    lab.textContent = p.label;
+    svg.appendChild(lab);
   });
   mount.appendChild(svg);
 }
@@ -357,9 +514,15 @@ document.getElementById("asof-date").textContent = DATA.asOf;
 renderTiles();
 renderTable();
 barChart("chart-monthly", DATA.monthly, { height: 240 });
+cumulativeChart("chart-cumulative", DATA.monthly);
 barChart("chart-daily", DATA.daily, { height: 220 });
 hbarChart("chart-funds", DATA.funds.filter((f) => f.cumulative != null)
   .map((f) => ({ label: `${f.name} (${f.ticker})`, value: f.cumulative, sub: `launched ${f.launched} · fee ${f.fee}` })));
 hbarChart("chart-supply", DATA.supply, {
+  fmt: (v) => v.toLocaleString(undefined, { maximumFractionDigits: 2 }) + "B XRP",
+});
+donutChart("donut-funds", DATA.funds.filter((f) => f.cumulative != null)
+  .map((f) => ({ label: `${f.ticker}`, value: f.cumulative, sub: `${f.name} · launched ${f.launched}` })));
+donutChart("donut-supply", DATA.supply.map((s) => ({ label: s.label, value: s.value, sub: s.sub })), {
   fmt: (v) => v.toLocaleString(undefined, { maximumFractionDigits: 2 }) + "B XRP",
 });
