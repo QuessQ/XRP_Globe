@@ -3,17 +3,17 @@
    Live values: https://sosovalue.com/assets/etf/us-xrp-spot and https://farside.co.uk/xrp/ */
 
 const DATA = {
-  asOf: "August 22, 2026",
+  asOf: "August 25, 2026",
 
   summary: [
-    { label: "Past week (Aug 17–21)", value: 39.78, unit: "M", cls: "pos",
-      sub: "Best week since May — Wu Blockchain / SoSoValue" },
-    { label: "Past month (July 2026)", value: 27.29, unit: "M", cls: "pos",
-      sub: "Zero-flow days on 11 of 22 sessions" },
-    { label: "Since launch (Nov 2025)", value: 1510, unit: "M", cls: "pos",
-      sub: "≈ $1.51B cumulative net inflow" },
-    { label: "Total net assets", value: 994, unit: "M", cls: "",
-      sub: "≈ 994.7M XRP custodied (Aug 17)" },
+    { label: "Past week (Aug 17–24)", value: 53.60, unit: "M", cls: "pos",
+      sub: "Best week since May, extended by the Aug 24 print — SoSoValue" },
+    { label: "Past month (Aug 2026, to 24th)", value: 53.47, unit: "M", cls: "pos",
+      sub: "Reversed a near-flat first half of the month" },
+    { label: "Since launch (Nov 2025)", value: 1550, unit: "M", cls: "pos",
+      sub: "New record — ≈ $1.55B cumulative net inflow" },
+    { label: "Total net assets", value: 1441, unit: "M", cls: "",
+      sub: "Assets re-inflated as XRP rallied ~50% on the week" },
   ],
 
   // Combined monthly net flows, US$m (SoSoValue-based reporting).
@@ -22,7 +22,7 @@ const DATA = {
     { label: "May", value: 118.29 },
     { label: "Jun", value: 59.46 },
     { label: "Jul", value: 27.29 },
-    { label: "Aug (to 21st)", value: 39.65 },
+    { label: "Aug (to 24th)", value: 53.47 },
   ],
 
   // Individually reported trading days, August 2026, US$m.
@@ -32,15 +32,16 @@ const DATA = {
     { label: "Aug 18", value: 5.81 },
     { label: "Aug 20", value: 13.24 },
     { label: "Aug 21", value: 18.38 },
+    { label: "Aug 24", value: 13.82 },
   ],
 
   funds: [
     { name: "Bitwise XRP ETF", ticker: "XRP", exchange: "NYSE", launched: "Nov 20, 2025",
-      fee: "0.34%", cumulative: 510.21, note: "Flow leader most weeks" },
+      fee: "0.34%", cumulative: 542.69, note: "Flow leader most weeks, incl. Aug 24's $8.25M" },
     { name: "Canary XRP ETF", ticker: "XRPC", exchange: "Nasdaq", launched: "Nov 13, 2025",
       fee: "0.50%", cumulative: 468.12, note: "First US spot XRP ETF" },
     { name: "Franklin XRP ETF", ticker: "XRPZ", exchange: "NYSE Arca", launched: "Nov 24, 2025",
-      fee: "0.19%", cumulative: 426.53, note: "Lowest base fee" },
+      fee: "0.19%", cumulative: 434.16, note: "Lowest base fee" },
     { name: "Grayscale XRP Trust ETF", ticker: "GXRP", exchange: "NYSE Arca", launched: "Nov 24, 2025",
       fee: "0% intro", cumulative: 131.46, note: "$60M+ day-one inflow" },
     { name: "21Shares XRP ETF", ticker: "TOXR", exchange: "Cboe BZX", launched: "Dec 1, 2025",
@@ -53,11 +54,11 @@ const DATA = {
 
   // Billions of XRP. Overlapping buckets from different trackers — a map, not a partition.
   supply: [
-    { label: "Ripple escrow (locked)", value: 35.6, sub: "~35–36B locked on-ledger — verify on XRPScan" },
+    { label: "Ripple escrow (locked)", value: 38, sub: "~38B locked on-ledger after an Aug release — verify on XRPScan" },
     { label: "Whales 1M–10M XRP", value: 16.36, sub: "+380M in one August week" },
     { label: "Whales 10M–100M XRP", value: 12.2, sub: "+1.23B year-to-date" },
     { label: "Top-3 exchanges (Upbit, Binance, Bithumb)", value: 10.84, sub: "−240M since late May" },
-    { label: "US spot ETFs (cold storage)", value: 0.99, sub: "≈ 994.7M XRP, ~1% of supply" },
+    { label: "US spot ETFs (cold storage)", value: 0.99, sub: "≈ 994.7M+ XRP, ~1% of supply" },
   ],
 };
 
