@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>XRP Pulse — ETF Flows</title>
+<meta name="description" content="US spot XRP ETF net inflows — past week, month, and since launch — with per-fund breakdown, supply map, and links to the primary trackers." />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='42' fill='%230d0d12' stroke='%233987e5' stroke-width='8'/></svg>" />
+<style>
+/* Same validated dark tokens as the globe app (css/style.css) */
+:root {
+  --page:           #0d0d12;
+  --surface-1:      rgba(20, 21, 30, 0.82);
+  --surface-2:      rgba(28, 29, 40, 0.9);
+  --text-primary:   #ffffff;
+  --text-secondary: #c3c2c7;
+  --text-muted:     #8b8a91;
+  --hairline:       rgba(255, 255, 255, 0.10);
+  --gridline:       rgba(255, 255, 255, 0.08);
+  --accent:         #3987e5;   /* inflow / magnitude (sequential blue) */
+  --accent-soft:    rgba(57, 135, 229, 0.22);
+  --outflow:        #e66767;   /* diverging pole: net outflow */
+  --whale:          #d55181;
+  --good:           #0ca30c;
+  --warning:        #fab219;
+  --radius: 10px;
+  --font: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--page); color: var(--text-primary); font-family: var(--font); }
+body { padding: 0 16px 48px; }
+a { color: var(--accent); }
+
+.topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 0 6px; flex-wrap: wrap; }
+.brand { display: flex; align-items: baseline; gap: 8px; }
+.brand h1 { font-size: 17px; font-weight: 650; margin: 0; letter-spacing: 0.02em; }
+.brand .subtitle { font-size: 12px; color: var(--text-muted); }
+.brand-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--accent);
+  box-shadow: 0 0 10px 2px var(--accent-soft); align-self: center; }
+.ctl-btn { font: 600 12px var(--font); color: var(--text-secondary); text-decoration: none;
+  background: var(--surface-1); border: 1px solid var(--hairline); border-radius: 999px; padding: 6px 12px; }
+.ctl-btn:hover { color: var(--text-primary); border-color: rgba(255,255,255,0.25); }
+
+.asof { font-size: 12px; color: var(--text-muted); margin: 2px 0 14px; }
+.asof strong { color: var(--warning); font-weight: 650; }
+
+main { max-width: 1060px; margin: 0 auto; }
+section { background: var(--surface-1); border: 1px solid var(--hairline); border-radius: var(--radius);
+  padding: 16px 18px; margin-bottom: 16px; }
+h2 { font-size: 14px; font-weight: 650; margin: 0 0 4px; letter-spacing: 0.03em; }
+h2 .muted, .muted { color: var(--text-muted); font-weight: 500; font-size: 12px; }
+.section-note { font-size: 12px; color: var(--text-secondary); margin: 0 0 12px; max-width: 72ch; }
+
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin: 12px 0 4px; }
+.tile { background: var(--surface-2); border: 1px solid var(--hairline); border-radius: 8px; padding: 10px 12px; }
+.tile-label { display: block; font-size: 11px; color: var(--text-muted); letter-spacing: 0.05em; text-transform: uppercase; }
+.tile-value { display: block; font-size: 22px; font-weight: 650; margin-top: 3px; }
+.tile-sub { display: block; font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+.pos { color: #7be07b; } .neg { color: var(--outflow); }
+
+.chart-wrap { overflow-x: auto; }
+svg text { font-family: var(--font); pointer-events: none; }
+svg rect, svg path.seg, svg circle.dot-pt { cursor: pointer; }
+svg rect.bar { transition: height 0.7s cubic-bezier(0.2,0.7,0.3,1), y 0.7s cubic-bezier(0.2,0.7,0.3,1), opacity 0.2s ease, filter 0.15s ease; }
+svg rect.bar:hover, svg path.seg:hover { filter: brightness(1.25); }
+path.seg { transition: stroke-dashoffset 0.9s cubic-bezier(0.2,0.7,0.3,1), opacity 0.2s ease; }
+path.line-draw { transition: stroke-dashoffset 1.1s cubic-bezier(0.2,0.7,0.3,1); }
+path.area-fade { transition: opacity 0.8s ease 0.3s; }
+
+.viz-row { display: flex; flex-wrap: wrap; gap: 22px; align-items: center; }
+.donut-wrap { position: relative; flex: 0 0 auto; }
+.donut-center { position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; text-align: center; pointer-events: none; }
+.donut-center .dc-value { font-size: 19px; font-weight: 700; }
+.donut-center .dc-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; max-width: 90px; }
+.legend { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 7px; flex: 1 1 220px; min-width: 200px; }
+.legend li { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--text-secondary);
+  cursor: pointer; padding: 4px 6px; border-radius: 6px; transition: background 0.15s ease, opacity 0.15s ease; }
+.legend li:hover { background: rgba(255,255,255,0.06); }
+.legend li.dim { opacity: 0.35; }
+.legend .swatch { width: 10px; height: 10px; border-radius: 3px; flex: 0 0 auto; }
+.legend .lg-name { flex: 1; color: var(--text-primary); }
+.legend .lg-pct { font-variant-numeric: tabular-nums; color: var(--text-muted); }
+
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { text-align: left; font-size: 11px; color: var(--text-muted); letter-spacing: 0.05em;
+  text-transform: uppercase; font-weight: 600; padding: 8px 10px 6px; border-bottom: 1px solid var(--hairline); }
+td { padding: 8px 10px; border-bottom: 1px solid var(--gridline); color: var(--text-secondary); }
+td:first-child { color: var(--text-primary); font-weight: 600; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.table-scroll { overflow-x: auto; }
+
+ul.facts { margin: 8px 0 0; padding-left: 18px; font-size: 13px; color: var(--text-secondary); }
+ul.facts li { margin-bottom: 7px; max-width: 80ch; }
+ul.facts a { font-size: 12px; }
+
+.src-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; margin-top: 10px; }
+.src { background: var(--surface-2); border: 1px solid var(--hairline); border-radius: 8px; padding: 10px 12px; font-size: 12px; color: var(--text-secondary); }
+.src a { font-weight: 650; font-size: 13px; display: block; margin-bottom: 3px; }
+
+.calc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin: 12px 0; }
+.calc-grid label { display: flex; flex-direction: column; gap: 5px; font-size: 11px; color: var(--text-muted);
+  letter-spacing: 0.05em; text-transform: uppercase; }
+.calc-grid input { background: var(--surface-2); border: 1px solid var(--hairline); border-radius: 8px;
+  color: var(--text-primary); font: 600 15px var(--font); padding: 8px 10px; width: 100%; }
+.calc-grid input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+#tooltip { position: fixed; pointer-events: none; z-index: 50; display: none;
+  background: var(--surface-2); border: 1px solid var(--hairline); border-radius: 8px;
+  padding: 7px 10px; font-size: 12px; color: var(--text-primary); box-shadow: 0 4px 18px rgba(0,0,0,0.5); }
+#tooltip .t-sub { color: var(--text-secondary); }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-dot"></span>
+    <h1>XRP&nbsp;Pulse</h1>
+    <span class="subtitle">US spot XRP ETF flows</span>
+  </div>
+  <div class="top-controls">
+    <a class="ctl-btn" href="index.html">← Globe</a>
+  </div>
+</header>
+
+<main>
+  <p class="asof"><strong>Snapshot dashboard.</strong> Figures are hand-compiled from the trackers and reports
+  cited below, as of <span id="asof-date"></span>. Numbers move daily — use the “Verify this data” links at the
+  bottom to check the live values.</p>
+
+  <section>
+    <h2>Highlights <span class="muted">— what matters right now</span></h2>
+    <ul class="facts" style="margin-top:6px">
+      <li><strong class="pos">Flows just turned, and kept going:</strong> +$53.60M for the week of Aug 17–24 — the best week since May — after a $13.82M print on Aug 24 extended the streak past the initial $39.78M (Aug 17–21) burst.</li>
+      <li><strong>Price led the flows:</strong> XRP surged roughly 70% off its $1.00 defense in under 72 hours, touching ~$1.70 before settling near $1.48–$1.50 — the rally, not fresh allocations alone, re-inflated fund assets.</li>
+      <li><strong>The core tension:</strong> Ripple's monthly escrow unlock (roughly 1B XRP released in August) vs. ETF demand — sustained weekly inflows above ~$40M are needed to outweigh new supply hitting the market.</li>
+      <li><strong>Whales are accumulating, not selling:</strong> large wallets added ~380M XRP in one August week, exchange reserves are down 240M since May, and whale deposits to exchanges are at their lowest since 2021.</li>
+      <li><strong>Regulation is the overhang:</strong> the CLARITY Act was shelved before the Senate's August recess — 2026 passage odds fell from ~82% to ~30%. Watch the October window.</li>
+      <li><strong>Demand is global, not just US:</strong> in early April a $224M crypto ETP inflow week was led by XRP and was almost entirely European/international — while US funds saw near-zero flows.</li>
+      <li><strong>Cost basis has narrowed:</strong> ~$1.55B has flowed into US ETFs since launch; the week's price surge lifted net assets back toward ~$1.4B, cutting the gap between inflows and holdings value.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Net inflows at a glance <span class="muted">— all US spot XRP ETFs combined</span></h2>
+    <div class="tiles" id="summary-tiles"></div>
+  </section>
+
+  <section>
+    <h2>XRP price movement <span class="muted">(US$, live from CoinGecko)</span>
+      <span id="price-ranges" style="float:right; display:inline-flex; gap:6px">
+        <button class="ctl-btn range-btn" data-days="7">7D</button>
+        <button class="ctl-btn range-btn" data-days="30">30D</button>
+        <button class="ctl-btn range-btn" data-days="365" aria-pressed="true">1Y</button>
+      </span>
+    </h2>
+    <p class="section-note">Fetched live in your browser from CoinGecko's public API, so this panel is always
+      current (unlike the dated snapshot figures elsewhere on the page). Context from coverage: a falling channel
+      since Oct 2025 (roughly $0.85–$1.60), resistance at $1.80–$2.00 from the January bounce, and repeated tests
+      of the $1.00 level in August.</p>
+    <div class="chart-wrap" id="chart-price"></div>
+  </section>
+
+  <section>
+    <h2>Net flows by month <span class="muted">(US$ millions, 2026)</span></h2>
+    <p class="section-note">Combined net creations minus redemptions across all US spot XRP ETFs.
+      Launch months (Nov–Dec 2025) absorbed the bulk of the ~$1.5B cumulative total; 2026 monthly
+      figures below are as reported by SoSoValue-based coverage.</p>
+    <div class="chart-wrap" id="chart-monthly"></div>
+    <h2 style="margin-top:18px">Running total <span class="muted">— cumulative net flow, Apr–Aug 2026</span></h2>
+    <p class="section-note">Same five months, added up. Hover the line to see the running total at any point;
+      the climb shows how consistently positive months compound even when any single month looks unremarkable.</p>
+    <div class="chart-wrap" id="chart-cumulative"></div>
+  </section>
+
+  <section>
+    <h2>Recent daily net flows <span class="muted">(US$ millions — reported trading days, August 2026)</span></h2>
+    <p class="section-note">Days with individually reported figures. The week of Aug 17–21 totalled
+      <strong class="pos">+$39.78M</strong>, the best week since May, and Aug 24 added another
+      <strong class="pos">+$13.82M</strong>; Aug 17 and 19 made up a further ≈ +$2.4M combined but were not
+      itemized in the coverage used — check SoSoValue for the exact per-day split.</p>
+    <div class="chart-wrap" id="chart-daily"></div>
+  </section>
+
+  <section>
+    <h2>The funds <span class="muted">— every US-listed XRP ETF</span></h2>
+    <div class="table-scroll" id="fund-table"></div>
+    <p class="section-note" style="margin-top:10px">Cumulative net inflows per fund
+      (US$ millions, since each fund's launch, as reported through Aug 24, 2026):</p>
+    <div class="chart-wrap" id="chart-funds"></div>
+    <h2 style="margin-top:18px">Share of cumulative inflows <span class="muted">— click a fund to isolate it</span></h2>
+    <div class="viz-row" id="donut-funds"></div>
+  </section>
+
+  <section>
+    <h2>Where the XRP sits <span class="muted">— supply map (billions of XRP)</span></h2>
+    <p class="section-note">Total supply is 100B XRP. These buckets come from different on-chain trackers and
+      overlap is possible (e.g. a whale wallet can also be an exchange wallet), so they are a map, not an exact
+      partition. The clear 2026 trend: coins are leaving exchanges for self-custody and ETF cold storage.</p>
+    <div class="chart-wrap" id="chart-supply"></div>
+    <h2 style="margin-top:18px">Supply map, by share <span class="muted">— click a bucket to isolate it</span></h2>
+    <div class="viz-row" id="donut-supply"></div>
+    <h2 style="margin-top:18px">Exchange outflows &amp; whale activity <span class="muted">(August 2026)</span></h2>
+    <ul class="facts">
+      <li><strong>Exchange reserves shrinking:</strong> XRP balances on Upbit, Binance and Bithumb fell ~240M tokens
+        (−2.2%) since late May, to roughly 10.84B XRP combined —
+        <a href="https://finance.biggo.com/news/b397f51d-352f-48e3-a6ec-59ccae05cd29" target="_blank" rel="noopener">source</a>.</li>
+      <li><strong>Outflows go to self-custody:</strong> roughly 81% of recent Binance XRP outflows originated from
+        large holders moving coins to private wallets —
+        <a href="https://onchain-bible.com/en/news/xrp-whale-exchange-outflow-august-2026/" target="_blank" rel="noopener">source</a>.</li>
+      <li><strong>Whales accumulating:</strong> 1M–10M XRP wallets added ~380M tokens in one week of August
+        (16.05B → 16.36B) — <a href="https://crypto.news/xrp-whale-accumulation-380-million-tokens-on-chain-data/" target="_blank" rel="noopener">source</a>;
+        10M–100M XRP wallets added ~1.23B tokens year-to-date (10.97B → 12.2B) —
+        <a href="https://www.cryptotimes.io/2026/08/11/xrp-price-tests-1-support-amid-whale-accumulation-acceleration/" target="_blank" rel="noopener">source</a>.</li>
+      <li><strong>Deposits to exchanges at multi-year lows:</strong> whale deposits to Binance hit their lowest level
+        since 2021 (3-month average ≈ $61M) —
+        <a href="https://finance.biggo.com/news/e7cc3564-55c8-4830-9d78-ae7024ec771d" target="_blank" rel="noopener">source</a>.</li>
+      <li><strong>ETF custody:</strong> the seven US funds custody ≈ 994.7M XRP (≈ 1% of supply) —
+        <a href="https://www.tradingnews.com/news/xrp-etf-7-fund-hold-994m-usd-on-1-5-b-inflows-" target="_blank" rel="noopener">source</a>.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Global view <span class="muted">— XRP beyond the US</span></h2>
+    <p class="section-note">US spot ETFs are the newest and loudest venue, but they are neither the only listed
+      products nor where most XRP actually trades and gets used.</p>
+    <ul class="facts">
+      <li><strong>Europe (ETPs since 2019–2024):</strong> 21Shares' Swiss-listed
+        <a href="https://www.21shares.com/en-eu/product/axrp" target="_blank" rel="noopener">AXRP</a> (~€213M AUM),
+        WisdomTree's physically-backed XRPW on Xetra/SIX/Euronext (0.50% fee), plus CoinShares products.
+        European/international ETP demand led an
+        <a href="https://www.coindesk.com/markets/2026/04/07/crypto-s-usd224-million-inflow-rebound-was-led-by-mostly-one-country-and-xrp" target="_blank" rel="noopener">early-April $224M crypto inflow week</a>
+        while US funds were near zero.</li>
+      <li><strong>Americas ex-US:</strong> Brazil approved the first spot XRP ETF anywhere
+        (Hashdex Nasdaq XRP Fund, XRPH11 on B3); Canadian spot XRP ETFs (Purpose, Evolve, 3iQ) listed in Toronto in mid-2025, ahead of the US.</li>
+      <li><strong>Asia:</strong> HashKey Capital launched Asia's first XRP tracker fund in Hong Kong (April 2025,
+        Ripple as anchor investor). Korean won pairs on Upbit/Bithumb are persistently among XRP's largest spot
+        markets — Korean retail, not US institutions, often sets the marginal price.</li>
+      <li><strong>Japan is the real adoption story:</strong> the only country using XRP in regulated consumer
+        finance — SBI's ecosystem, FSA-licensed prepaid payment tokens on the XRP Ledger, tokenized bonds with XRP
+        bonuses, and Ripple's RLUSD stablecoin
+        <a href="https://coinpedia.org/news/ripple-launches-rlusd-in-japan-in-major-push-for-regulated-stablecoin-adoption" target="_blank" rel="noopener">launched via SBI VC Trade</a>
+        (full availability June 2026) —
+        <a href="https://crypto.news/japan-is-the-only-country-actually-using-xrp-inside-the-sbi-empire/" target="_blank" rel="noopener">source</a>.</li>
+      <li><strong>Payments corridors:</strong> Ripple runs 70+ active ODL corridors (US→Mexico via Bitso,
+        UAE→India via Lulu Exchange, Japan→Thailand via SBI/SCB, Brazil→North America via Travelex) —
+        <a href="https://www.tokensonar.com/blog/which-banks-use-xrp-2026.html" target="_blank" rel="noopener">source</a>.</li>
+      <li><strong>Regulation abroad is ahead of the US:</strong> Ripple holds preliminary MiCA CASP approval in
+        Luxembourg and JFSA approvals in Japan —
+        <a href="https://genfinity.io/2026/06/25/ripple-rlusd-japan-luxembourg-mica-global-regulatory-expansion/" target="_blank" rel="noopener">source</a> —
+        while the US CLARITY Act stalls.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Projection calculator <span class="muted">— lump sum + monthly investing (DCA/EMI style)</span></h2>
+    <p class="section-note">Enter what you'd invest and your average buy price; the table shows what that stake
+      would be worth if XRP reaches each price target. Monthly contributions are assumed to buy at the same average
+      price — a simplification, since real DCA fills at market prices along the way. This is arithmetic, not
+      advice: the targets below come from published analyst forecasts that disagree wildly with each other.</p>
+    <div class="calc-grid">
+      <label>One-time investment (US$)<input id="calc-lump" type="number" min="0" value="1000"></label>
+      <label>Monthly contribution (US$)<input id="calc-monthly" type="number" min="0" value="100"></label>
+      <label>Months of contributions<input id="calc-months" type="number" min="0" value="24"></label>
+      <label>Average buy price (US$)<input id="calc-buy" type="number" min="0.01" step="0.01" value="1.00"></label>
+      <label>Custom target price (US$)<input id="calc-target" type="number" min="0.01" step="0.01" value="5.00"></label>
+    </div>
+    <div class="tiles" id="calc-tiles"></div>
+    <div class="table-scroll" id="calc-table"></div>
+  </section>
+
+  <section>
+    <h2>Long-range scenarios <span class="muted">— published forecasts, 2027 → 2035</span></h2>
+    <p class="section-note">These are other people's predictions, gathered for reference — they range from
+      sub-$1 to fantasy triple digits, which itself tells you how uncertain this is. The market-cap column is the
+      sanity check: price × ~64B circulating XRP. For scale, gold is ~$20T and all of crypto has peaked near $4T —
+      treat any target implying multi-trillion-dollar caps with heavy skepticism.</p>
+    <div class="table-scroll" id="scenario-table"></div>
+    <ul class="facts">
+      <li><strong>Bear case logic:</strong> ETF inflows stay weak, CLARITY Act keeps slipping, escrow supply
+        outpaces demand — aggregator floors sit around $1.00–$1.60 through 2030.</li>
+      <li><strong>Base case logic:</strong> regulation clears and ETF demand normalizes — aggregators cluster
+        around $2.50–$4.60 by 2030 (AMBCrypto, cryptonews, Kraken ranges).</li>
+      <li><strong>Bull case logic:</strong> Standard Chartered's Geoffrey Kendrick has a $7 target by 2027 on
+        payments adoption + ETF flows; the most aggressive published 2030–2040 calls reach ~$27 (implying a
+        ~$1.7T market cap — larger than all of crypto ex-Bitcoin today).</li>
+      <li><strong>What actually decides it:</strong> watch the dashboard's own signals — weekly ETF flows vs.
+        monthly escrow unlocks, whale accumulation, and US legislation. Predictions follow those; not the other
+        way around.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Verify this data <span class="muted">— live primary trackers</span></h2>
+    <p class="section-note">Everything above can be checked (and refreshed) here. SoSoValue is the source most
+      flow reporting is built on; Farside publishes the raw daily table.</p>
+    <div class="src-grid">
+      <div class="src"><a href="https://sosovalue.com/assets/etf/us-xrp-spot" target="_blank" rel="noopener">SoSoValue — US XRP spot ETF dashboard</a>
+        Daily net inflow/outflow per fund, cumulative totals, net assets. The canonical flow tracker.</div>
+      <div class="src"><a href="https://farside.co.uk/xrp/" target="_blank" rel="noopener">Farside Investors — XRP ETF flow table</a>
+        Raw dated table of daily flows per ticker in US$m.</div>
+      <div class="src"><a href="https://xrp-insights.com/" target="_blank" rel="noopener">XRP Insights — live AUM &amp; holdings</a>
+        Per-fund AUM and XRP holdings verified from issuer pages, updated continuously.</div>
+      <div class="src"><a href="https://www.coinglass.com/balance/XRP" target="_blank" rel="noopener">CoinGlass — exchange XRP balances</a>
+        Exchange reserve levels and 7/30-day exchange netflows.</div>
+      <div class="src"><a href="https://xrpscan.com/" target="_blank" rel="noopener">XRPScan — XRP Ledger explorer</a>
+        Rich lists, escrow balances, and individual whale transactions on-chain.</div>
+      <div class="src"><a href="https://whale-alert.io/" target="_blank" rel="noopener">Whale Alert</a>
+        Real-time alerts for large XRP transfers between exchanges and unknown wallets.</div>
+    </div>
+  </section>
+</main>
+
+<div id="tooltip"></div>
+<script src="js/etf.js"></script>
+</body>
+</html>
