@@ -3,17 +3,17 @@
    Live values: https://sosovalue.com/assets/etf/us-xrp-spot and https://farside.co.uk/xrp/ */
 
 const DATA = {
-  asOf: "August 25, 2026",
+  asOf: "September 26, 2026",
 
   summary: [
-    { label: "Past week (Aug 17–24)", value: 53.60, unit: "M", cls: "pos",
-      sub: "Best week since May, extended by the Aug 24 print — SoSoValue" },
-    { label: "Past month (Aug 2026, to 24th)", value: 53.47, unit: "M", cls: "pos",
-      sub: "Reversed a near-flat first half of the month" },
-    { label: "Since launch (Nov 2025)", value: 1550, unit: "M", cls: "pos",
-      sub: "New record — ≈ $1.55B cumulative net inflow" },
-    { label: "Total net assets", value: 1441, unit: "M", cls: "",
-      sub: "Assets re-inflated as XRP rallied ~50% on the week" },
+    { label: "Past week (Sep 21–25)", value: 75.59, unit: "M", cls: "pos",
+      sub: "Strongest week of September; Bitwise +$59.0M, Franklin XRPZ +$16.6M" },
+    { label: "Past month (Sep 2026, reported weeks)", value: 104.14, unit: "M", cls: "pos",
+      sub: "Inflow streak extended to 11 straight weeks" },
+    { label: "Since launch (Nov 2025)", value: 1790, unit: "M", cls: "pos",
+      sub: "New record — ≈ $1.79B cumulative net inflow" },
+    { label: "Total net assets", value: 1770, unit: "M", cls: "",
+      sub: "Assets now slightly below cumulative inflows as price cooled" },
   ],
 
   // Combined monthly net flows, US$m (SoSoValue-based reporting).
@@ -22,7 +22,8 @@ const DATA = {
     { label: "May", value: 118.29 },
     { label: "Jun", value: 59.46 },
     { label: "Jul", value: 27.29 },
-    { label: "Aug (to 24th)", value: 53.47 },
+    { label: "Aug", value: 150.00 },
+    { label: "Sep (to 25th)", value: 104.14 },
   ],
 
   // Individually reported trading days, August 2026, US$m.
