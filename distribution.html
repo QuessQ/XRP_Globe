@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>XRP Pulse — Holder Distribution</title>
+<meta name="description" content="XRP Ledger account distribution by balance band, tracked across snapshots." />
+<link rel="stylesheet" href="css/style.css" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='42' fill='%230d0d12' stroke='%233987e5' stroke-width='8'/></svg>" />
+</head>
+<body class="page-scroll">
+
+<header class="topbar topbar-static">
+  <div class="brand">
+    <span class="brand-dot"></span>
+    <h1>XRP&nbsp;Pulse</h1>
+    <span class="subtitle">holder distribution</span>
+  </div>
+  <div class="top-controls">
+    <a class="ctl-btn" href="index.html">← Globe</a>
+  </div>
+</header>
+
+<main class="dist">
+  <section class="dist-head">
+    <h2>XRP holder distribution</h2>
+    <p class="panel-note" id="dist-summary"></p>
+    <label class="dist-picker">Compare
+      <select id="dist-from"></select> → <select id="dist-to"></select>
+    </label>
+  </section>
+
+  <div class="tiles tiles-3" id="dist-tiles"></div>
+
+  <h3>Share of XRP by cohort over time</h3>
+  <div id="dist-chart" class="dist-chart" role="img" aria-label="Line chart of XRP share by holder cohort across snapshots"></div>
+  <div id="dist-legend" class="dist-legend"></div>
+
+  <h3>By balance band</h3>
+  <div class="dist-table-wrap">
+    <table class="data-table dist-table" id="dist-table"></table>
+  </div>
+
+  <h3>Change over time
+    <select id="hist-metric" class="dist-inline-select">
+      <option value="0">Accounts (wallets)</option>
+      <option value="1">XRP held</option>
+    </select>
+  </h3>
+  <div class="dist-table-wrap">
+    <table class="data-table dist-table" id="hist-table"></table>
+  </div>
+
+  <p class="panel-note">Source: harvest.finance/xrp-rich-list (full ledger walk). Escrow is counted
+  with account balances. One account ≠ one person. XRP held is rounded as published.
+  Add new snapshots in <code>js/distribution-data.js</code>.</p>
+</main>
+
+<script type="module" src="js/distribution.js"></script>
+</body>
+</html>
