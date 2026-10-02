@@ -284,3 +284,27 @@ html, body {
   .panel-left { height: 44vh; top: auto; bottom: 52px; }
   .panel-right { bottom: 52px; }
 }
+
+/* ---------- distribution page ---------- */
+body.page-scroll { overflow: auto; height: auto; }
+.topbar-static { position: sticky; background: var(--page); border-bottom: 1px solid var(--hairline); }
+a.ctl-btn { text-decoration: none; display: inline-block; }
+.dist { max-width: 860px; margin: 0 auto; padding: 16px 16px 48px; }
+.dist-head h2 { margin: 8px 0 4px; font-size: 22px; }
+.dist-picker { display: inline-flex; gap: 6px; align-items: center; font-size: 12px; color: var(--text-muted); margin: 6px 0 12px; flex-wrap: wrap; }
+.dist-picker select, .dist-inline-select { background: var(--surface-2); color: var(--text-primary); border: 1px solid var(--hairline); border-radius: 6px; padding: 4px 6px; font: 12px var(--font); }
+.dist .tile { display: flex; flex-direction: column; gap: 2px; }
+.dist-chart { width: 100%; margin-top: 8px; }
+.dist-axis { fill: var(--text-muted); font-size: 11px; }
+.dist-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: var(--text-secondary); margin: 6px 0 16px; }
+.dist-legend .swatch { width: 10px; height: 10px; border-radius: 2px; display: inline-block; margin-right: 6px; }
+.dist-table-wrap { overflow-x: auto; }
+.dist-table { font-size: 13px; }
+.dist-table td, .dist-table th { text-align: right; font-variant-numeric: tabular-nums; padding: 6px 8px; white-space: nowrap; }
+.dist-table td:first-child, .dist-table th:first-child { text-align: left; }
+.dist-hi { color: var(--warning); }
+.delta { font-size: 11px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.delta-up { color: var(--good); }
+.delta-down { color: var(--whale); }
+.dist-inline-select { margin-left: 8px; }
+@media (max-width: 600px) { .dist .tiles-3 { grid-template-columns: 1fr; } }

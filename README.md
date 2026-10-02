@@ -36,6 +36,12 @@ cities in real time, with an estimate of where the XRP supply is held.
   amount, cohort, both endpoints, whether each endpoint was identified or
   geo-estimated, live-vs-simulated, tx hash) for spreadsheet or notebook work.
 
+### Holder distribution (`distribution.html`)
+- Accounts and XRP held per balance band from harvest.finance/xrp-rich-list
+  snapshots, with changes between any two snapshots, a share-by-cohort chart
+  over time, and a per-band history of wallets and XRP held.
+- To update: append a snapshot to `SNAPSHOTS` in `js/distribution-data.js`.
+
 ### Holdings
 - **By holder type** — institutional (Ripple treasury & escrow), exchange
   reserves (custodial client funds), and the self-custody remainder, plus a
