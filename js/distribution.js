@@ -38,21 +38,23 @@ function renderTiles(cur, prev) {
 
 function renderTable(cur, prev) {
   const tc = totalHeld(cur), tp = prev && totalHeld(prev);
-  const head = `<thead><tr><th>Band (XRP)</th><th>Accounts</th><th>Δ</th><th>XRP held</th><th>Δ</th><th>% of XRP</th><th>Δ pp</th></tr></thead>`;
+  const head = `<thead><tr><th>Band (XRP)</th><th>Accounts</th><th>XRP held</th><th>% of XRP</th></tr></thead>`;
   const rows = BANDS.map((name, i) => {
     const [acc, held] = cur.bands[i];
     const p = pct(held, tc);
     const pa = prev?.bands[i];
     const hi = p >= 10 ? ' class="dist-hi"' : '';
-    return `<tr><td>${name}</td><td>${fmtInt(acc)}</td><td>${pa ? delta(acc, pa[0], fmtInt) : ''}</td>` +
-      `<td>${fmtXrp(held)}</td><td>${pa ? delta(held, pa[1], fmtXrp) : ''}</td><td${hi}>${fmtPct(p)}</td>` +
-      `<td>${pa ? delta(p, pct(pa[1], tp), (v) => v.toFixed(2)) : ''}</td></tr>`;
+    const sub = (d) => (d ? `<br>${d}` : '');
+    return `<tr><td>${name}</td><td>${fmtInt(acc)}${sub(pa && delta(acc, pa[0], fmtInt))}</td>` +
+      `<td>${fmtXrp(held)}${sub(pa && delta(held, pa[1], fmtXrp))}</td>` +
+      `<td${hi}>${fmtPct(p)}${sub(pa && delta(p, pct(pa[1], tp), (v) => v.toFixed(2), ' pp'))}</td></tr>`;
   }).join('');
   $('dist-table').innerHTML = head + `<tbody>${rows}</tbody>`;
 }
 
 function renderChart() {
-  const W = 720, H = 260, L = 44, R = 16, T = 12, B = 28;
+  const W = Math.max(280, $('dist-chart').clientWidth || 720);
+  const H = W < 500 ? 200 : 260, L = 40, R = 12, T = 12, B = 28;
   const series = COHORTS.map((c) => SNAPSHOTS.map((s) => {
     const t = totalHeld(s);
     return pct(c.bands.reduce((a, i) => a + s.bands[i][1], 0), t);
@@ -62,7 +64,7 @@ function renderChart() {
   const x = (i) => (n === 1 ? (L + W - R) / 2 : L + (i * (W - L - R)) / (n - 1));
   const y = (v) => T + (1 - v / max) * (H - T - B);
 
-  let svg = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" width="100%" height="${H}">`;
+  let svg = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">`;
   for (let v = 0; v <= max; v += 10) {
     svg += `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--gridline)"/>` +
       `<text x="${L - 6}" y="${y(v) + 4}" text-anchor="end" class="dist-axis">${v}%</text>`;
@@ -113,6 +115,20 @@ function renderHistory() {
 }
 
 $('hist-metric').onchange = renderHistory;
+let lastW = 0;
+new ResizeObserver(() => {
+  const w = $('dist-chart').clientWidth;
+  if (w && w !== lastW) { lastW = w; renderChart(); }
+}).observe($('dist-chart'));
 renderChart();
 renderHistory();
 render();
+
+// Highlight the section-nav link for the section currently in view.
+const navLinks = [...document.querySelectorAll('.section-nav a')];
+const spy = new IntersectionObserver((entries) => {
+  for (const e of entries) if (e.isIntersecting) {
+    navLinks.forEach((a) => a.classList.toggle('active', a.hash === '#' + e.target.id));
+  }
+}, { rootMargin: '-110px 0px -60% 0px' });
+navLinks.forEach((a) => spy.observe(document.querySelector(a.hash)));
