@@ -115,10 +115,19 @@ $('toggle-rotate').addEventListener('click', (e) => {
   e.currentTarget.setAttribute('aria-pressed', String(rotateEnabled));
 });
 
-for (const [btnId, panelId] of [['toggle-left', 'panel-left'], ['toggle-right', 'panel-right']]) {
-  $(btnId).addEventListener('click', (e) => {
-    const collapsed = $(panelId).classList.toggle('collapsed');
-    e.currentTarget.setAttribute('aria-pressed', String(!collapsed));
+const PANELS = [['toggle-left', 'panel-left'], ['toggle-right', 'panel-right']];
+const isNarrow = () => window.matchMedia('(max-width: 640px)').matches;
+function setPanel(btnId, panelId, open) {
+  $(panelId).classList.toggle('collapsed', !open);
+  $(btnId).setAttribute('aria-pressed', String(open));
+}
+// Phones only have room for one panel (shown as a bottom sheet), so start with both closed.
+if (isNarrow()) for (const [b, p] of PANELS) setPanel(b, p, false);
+for (const [btnId, panelId] of PANELS) {
+  $(btnId).addEventListener('click', () => {
+    const open = $(panelId).classList.contains('collapsed');
+    if (open && isNarrow()) for (const [b, p] of PANELS) if (p !== panelId) setPanel(b, p, false);
+    setPanel(btnId, panelId, open);
   });
 }
 

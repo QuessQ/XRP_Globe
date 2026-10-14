@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="page-scroll">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -16,13 +16,21 @@
     <h1>XRP&nbsp;Pulse</h1>
     <span class="subtitle">holder distribution</span>
   </div>
-  <div class="top-controls">
-    <a class="ctl-btn" href="index.html">← Globe</a>
-  </div>
+  <nav class="site-nav" aria-label="Pages">
+    <a href="index.html">Globe</a>
+    <a href="distribution.html" aria-current="page">Distribution</a>
+  </nav>
 </header>
 
+<nav class="section-nav" aria-label="Sections">
+  <a href="#overview">Overview</a>
+  <a href="#trend">Trend</a>
+  <a href="#bands">By band</a>
+  <a href="#history">History</a>
+</nav>
+
 <main class="dist">
-  <section class="dist-head">
+  <section class="dist-head" id="overview">
     <h2>XRP holder distribution</h2>
     <p class="panel-note" id="dist-summary"></p>
     <label class="dist-picker">Compare
@@ -32,16 +40,16 @@
 
   <div class="tiles tiles-3" id="dist-tiles"></div>
 
-  <h3>Share of XRP by cohort over time</h3>
+  <h3 id="trend">Share of XRP by cohort over time</h3>
   <div id="dist-chart" class="dist-chart" role="img" aria-label="Line chart of XRP share by holder cohort across snapshots"></div>
   <div id="dist-legend" class="dist-legend"></div>
 
-  <h3>By balance band</h3>
+  <h3 id="bands">By balance band</h3>
   <div class="dist-table-wrap">
     <table class="data-table dist-table" id="dist-table"></table>
   </div>
 
-  <h3>Change over time
+  <h3 id="history">Change over time
     <select id="hist-metric" class="dist-inline-select">
       <option value="0">Accounts (wallets)</option>
       <option value="1">XRP held</option>
